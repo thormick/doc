@@ -45,45 +45,46 @@ my @menu =
 #    ('formalities',''      ) => ();
 ;
 
-my $head   = slurp 'template/head.html';
-sub header-html ($current-selection = 'nothing selected') is cached {
+my $head = slurp 'template/head.html';
+
+sub header-html ($selection) is cached {
     state $header = slurp 'template/header.html';
+    my $with-active = $header.subst(
+        /\<(li id="nav-$selection")\>/, 
+        { "<$/[0] class="active">" });
 
-    my $menu-items = [~]
-        q[<div class="menu-items dark-green">],
-        @menu>>.key.map(-> ($dir, $name) {qq[
-            <a class="menu-item {$dir eq $current-selection ?? "selected darker-green" !! ""}"
-                href="/$dir.html">
-                { $name || $dir.wordcase }
-            </a>
-        ]}), #"
-        q[</div>];
+    state $sub-menu-pos = ($header ~~ /SUBMENU/).from;
+    if $sub-menu-pos >= 0 {
+        my $sub-menu-items = '';
+        state %sub-menus = @menu>>.key>>[0] Z=> @menu>>.value;
+        if %sub-menus{$current-selection} -> $_ {
+            $sub-menu-items = [~]
+                q[<div class="menu-items darker-green">],
+                qq[<a class="menu-item" href="/$current-selection.html">All</a>],
+                .map({qq[
+                    <a class="menu-item" href="/$current-selection\-$_.html">
+                        {.wordcase}
+                    </a>
+                ]}),
+                q[</div>];
+        }
 
-    my $sub-menu-items = '';
-    state %sub-menus = @menu>>.key>>[0] Z=> @menu>>.value;
-    if %sub-menus{$current-selection} -> $_ {
-        $sub-menu-items = [~]
-            q[<div class="menu-items darker-green">],
-            qq[<a class="menu-item" href="/$current-selection.html">All</a>],
-            .map({qq[
-                <a class="menu-item" href="/$current-selection\-$_.html">
-                    {.wordcase}
-                </a>
-            ]}),
-            q[</div>]
+        $header.subst('SUBMENU', :p($sub-menu), $sub-menu-items);
     }
-
-    state $menu-pos = ($header ~~ /MENU/).from;
-    $header.subst('MENU', :p($menu-pos), $menu-items ~ $sub-menu-items);
 }
 
 sub p2h($pod, $selection = 'nothing selected', :$pod-path = 'unknown') {
-    pod2html $pod,
+    my $html = pod2html $pod,
         :url(&url-munge),
         :$head,
-        :header(header-html $selection),
+        :header(header-html($selection)),
         :footer(footer-html($pod-path)),
-        :default-title("Perl 6 Documentation"),
+        :default-title("Perl 6 Documentation");
+
+    # Pod::To::HTML should really not be injecting styles/classes/etc without
+    # any way to override them but it does :(
+    $html.subst(rx{class="pod"}, q{class="bg"});
+    return $html;
 }
 
 sub recursive-dir($dir) {
@@ -643,6 +644,7 @@ sub write-index-files () {
     say 'Writing html/index.html ...';
     spurt 'html/index.html',
         p2h(EVAL(slurp('doc/HomePage.pod') ~ "\n\$=pod"),
+            selected => 'home',
             pod-path => 'HomePage.pod');
 
     say 'Writing html/language.html ...';
