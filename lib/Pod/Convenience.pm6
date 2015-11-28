@@ -1,35 +1,5 @@
 unit module Pod::Convenience;
 
-sub pod-gist(Pod::Block $pod, $level = 0) is export {
-    my $leading = ' ' x $level;
-    my %confs;
-    my @chunks;
-    for <config name level caption type> {
-        my $thing = $pod.?"$_"();
-        if $thing {
-            %confs{$_} = $thing ~~ Iterable ?? $thing.perl !! $thing.Str;
-        }
-    }
-    @chunks = $leading, $pod.^name, (%confs.perl if %confs), "\n";
-    for $pod.contents.list -> $c {
-        if $c ~~ Pod::Block {
-            @chunks.append: pod-gist($c, $level + 2);
-        }
-        elsif $c ~~ Str {
-            @chunks.append: $c.indent($level + 2), "\n";
-        } elsif $c ~~ Positional {
-            @chunks.append: $c.map: {
-                if $_ ~~ Pod::Block {
-                    *.&pod-gist
-                } elsif $_ ~~ Str {
-                    $_
-                }
-            }
-        }
-    }
-    @chunks.join;
-}
-
 sub first-code-block(@pod) is export {
     @pod.first(* ~~ Pod::Block::Code).contents.grep(Str).join;
 }

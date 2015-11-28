@@ -1,6 +1,6 @@
 use v6;
 
-class Perl6::Type {
+class DocSite::Type {
     has Str $.name handles <Str>;
     has @.super;
     has @.sub;
@@ -10,7 +10,7 @@ class Perl6::Type {
     has @.categories;
 
     has @.mro;
-    method mro(Perl6::Type:D:) {
+    method mro(DocSite::Type:D:) {
         return @!mro if @!mro;
         if @.super == 1 {
             @!mro = @.super[0].mro;

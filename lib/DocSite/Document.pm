@@ -1,5 +1,5 @@
 use URI::Escape;
-class Perl6::Documentable {
+class DocSite::Documentable {
     has Str $.kind;        # type, language doc, routine, module
     has Str @.subkinds;    # class/role/enum, sub/method, prefix/infix/...
     has Str @.categories;  # basic type, exception, operator...

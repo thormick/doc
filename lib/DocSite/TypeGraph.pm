@@ -1,5 +1,6 @@
-use Perl6::Type;
-class Perl6::TypeGraph {
+use DocSite::Type;
+
+class DocSite::TypeGraph {
     has %.types;
     has @.sorted;
     my grammar Decl {
@@ -34,7 +35,7 @@ class Perl6::TypeGraph {
     method parse-from-file($fn) {
         my $f = open $fn;
         my $get-type = -> Str $name {
-            %.types{$name} //= Perl6::Type.new(:$name);
+            %.types{$name} //= DocSite::Type.new(:$name);
         };
         my class Actions {
             method longname($/) {

@@ -1,7 +1,7 @@
 use v6;
-use Perl6::Documentable;
+use DocSite::Document;
 
-class Perl6::Documentable::Registry {
+class DocSite::Document::Registry {
     has @.documentables;
     has Bool $.composed = False;
     has %!cache;
@@ -9,7 +9,7 @@ class Perl6::Documentable::Registry {
     has @!kinds;
     method add-new(*%args) {
         die "Cannot add something to a composed registry" if $.composed;
-        @!documentables.append: my $d = Perl6::Documentable.new(|%args);
+        @!documentables.append: my $d = DocSite::Document.new(|%args);
         $d;
     }
     method compose() {

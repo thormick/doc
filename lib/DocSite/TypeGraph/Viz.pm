@@ -1,7 +1,9 @@
 use v6;
-use Perl6::TypeGraph;
 
-class Perl6::TypeGraph::Viz {
+class DocSite::TypeGraph::Viz {
+    use DocSite::TypeGraph;
+    use File::Temp;
+
     has @.types;
     has $.dot-hints;
     has $.url-base    = '/type/';
@@ -91,10 +93,9 @@ class Perl6::TypeGraph::Viz {
     }
 
     method to-file ($file, :$format = 'svg', :$size) {
-        my $tmpfile = $*TMPDIR ~ '/p6-doc-graphviz-' ~ (^100_000).pick;
+        my ( $tmpfile, $h ) = tempfile( :prefix('p6-doc-graphviz-') );
         spurt $tmpfile, self.as-dot(:$size);
         run 'dot', "-T$format", "-o$file", $tmpfile or die 'dot command failed! (did you install Graphviz?)';
-        unlink $tmpfile;
     }
 }
 
