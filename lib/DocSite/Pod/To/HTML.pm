@@ -1,3 +1,4 @@
+use v6;
 use Pod::To::HTML::Renderer;
 
 unit class DocSite::Pod::To::HTML is Pod::To::HTML::Renderer;
