@@ -24,5 +24,5 @@ sub MAIN (
         :$sparse,
         :$threads,
         :root( IO::Path.new($root) ),
-     ).run;
+    ).run;
 }
