@@ -1,3 +1,4 @@
+use v6;
 unit class DocSite::Generator;
 
 use lib 'lib';
@@ -148,6 +149,7 @@ sub viz-hints ($group) {
 
 method !process-language-pod {
     my $kind = 'Language';
+
     my @files = self!find-pod-files-in($kind);
     if $!sparse {
          @files = @files[^(@files / $!sparse).ceiling];
@@ -204,7 +206,7 @@ method !process-one-pod (IO::Path $file, Str $kind) {
 method !spurt-html-file (IO::Path $file, Str $kind, Str $html) {
     my $dir = IO::Path.new( $*SPEC.catfile( $!root, 'html', $kind.lc ) );
     unless $dir ~~ :e {
-#        $dir.mkdir(0o755);
+        $dir.mkdir(0o755);
     }
 
     IO::Path.new( $*SPEC.catfile( $dir, $file.basename.subst( / '.pod' $ /, '.html' ) ) )
@@ -212,7 +214,7 @@ method !spurt-html-file (IO::Path $file, Str $kind, Str $html) {
 }
 
 method !run-with-progress ($items, Routine $sub, Str $msg = q{   done}) {
-    my $prog = Term::ProgressBar.new( :count( $items.elems ) )
+    my $prog = Term::ProgressBar.new( :count( $items.elems ), :p )
         if $!verbose;
 
     my $supply = $items.Supply;
