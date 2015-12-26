@@ -1,6 +1,6 @@
 use v6;
 
-use lib 'lib', '../Pod-To-HTML/lib/', '../Pod-NodeWalker/lib/';
+use lib 'lib', '../Pod-To-HTML/lib/';
 use DocSite::Generator;
 
 sub MAIN (
