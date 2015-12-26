@@ -224,8 +224,8 @@ method !recursive-files-in($dir) {
     }
 }
 
-method !process-one-pod (IO::Path $pod-file, Bool $expect-titles) {
-    my $doc = DocSite::Documentable.new-from-file( $pod-file, $!type-graph, $expect-titles );
+method !process-one-pod (IO::Path $pod-file) {
+    my $doc = DocSite::Documentable.new-from-file( $pod-file, $!type-graph );
     self!spurt-html-file( $pod-file, $doc );
     $!registry.add-new($doc);
 }
