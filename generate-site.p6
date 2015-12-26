@@ -11,7 +11,7 @@ sub MAIN (
     Bool :$inline-python = True,
     Bool :$verbose = True,
     Int  :$sparse = 0,
-    Int  :$threads = 8,
+    Int  :$threads = 4,
     Str  :$root = $*SPEC.catdir( $*CWD )
 ) {
     DocSite::Generator.new(
