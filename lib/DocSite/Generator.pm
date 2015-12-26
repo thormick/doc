@@ -2,9 +2,8 @@ use v6;
 unit class DocSite::Generator;
 
 use lib 'lib';
-
-use DocSite::Document::Registry;
-use DocSite::Pod::To::HTML;
+use DocSite::Documentable;
+use DocSite::Documentable::Registry;
 use DocSite::TypeGraph::Viz;
 use DocSite::TypeGraph;
 use Pod::Convenience;
@@ -22,7 +21,7 @@ has Int  $!sparse;
 has Int  $!threads;
 has IO::Path $!root;
 
-has DocSite::Document::Registry $!registry = DocSite::Document::Registry.new;
+has DocSite::Documentable::Registry $!registry = DocSite::Documentable::Registry.new;
 has DocSite::TypeGraph $!type-graph;
 
 my @viz-formats = (

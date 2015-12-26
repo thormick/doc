@@ -1,16 +1,15 @@
 use v6;
-use DocSite::Document;
+use DocSite::Documentable;
 
-class DocSite::Document::Registry {
-    has @.documentables;
+class DocSite::Documentable::Registry {
+    has DocSite::Documentable @.documentables;
     has Bool $.composed = False;
     has %!cache;
     has %!grouped-by;
     has @!kinds;
-    method add-new(*%args) {
+    method add-new(DocSite::Documentable $doc) {
         die "Cannot add something to a composed registry" if $.composed;
-        @!documentables.append: my $d = DocSite::Document.new(|%args);
-        $d;
+        @!documentables.append($doc);
     }
     method compose() {
         @!kinds = @.documentables>>.kind.unique;
