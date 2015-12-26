@@ -6,6 +6,7 @@ use DocSite::Documentable;
 use DocSite::Documentable::Registry;
 use DocSite::TypeGraph::Viz;
 use DocSite::TypeGraph;
+use File::Find;
 use Pod::Convenience;
 use Pod::Htmlify;
 use Term::ProgressBar;
@@ -187,41 +188,23 @@ method !process-pod-in (Str $dir) {
          @files = @files[^(@files / $!sparse).ceiling];
     }
 
+method !process-pod-in (Str $dir) {
     self!maybe-say("Reading and processing $dir pod files ...");
+    my $files = self!find-pod-files-in($dir);
     self!run-with-progress(
-        @files,
+        $files,
         sub ($file) {
             self!process-one-pod($file);
         }
     );
 }
 
-method !find-pod-files-in (Str $dir) {
+method !find-pod-files-in (Str $in) {
+    my $dir = $*SPEC.catdir( $!root, 'doc', $in );
     self!maybe-say: "Finding pod sources in $dir ...";
-    return gather {
-        for self!recursive-files-in($dir) -> $file {
-            take $file if $file.path ~~ / '.pod' $/;
-        }
-    }
-}
-
-method !recursive-files-in($dir) {
-    my @todo = $*SPEC.catdir( $!root, 'doc', $dir );
-    return gather {
-        while @todo {
-            my $d = @todo.shift;
-            for dir($d) -> $f {
-                if $f.f {
-                    self!maybe-say: " ... found $f";
-                    take $f;
-                }
-                else {
-                    self!maybe-say: " ... descending into $f";
-                    @todo.append( $f.path );
-                }
-            }
-        }
-    }
+    my $files = find( :dir($dir), :name( rx{ '.pod' $ } ) ).cache;
+    self!maybe-say("  ... found $_") for $files.values;
+    return $files;
 }
 
 method !process-one-pod (IO::Path $pod-file) {
@@ -247,8 +230,13 @@ method !run-with-progress ($items, Routine $sub, Str $msg = q{   done}) {
     my $prog = Term::ProgressBar.new( :count( $items.elems ), :p )
         if $!verbose;
 
+    my $to-run =
+        $!sparse
+        ?? $items.pick( ( $items.list.elems / $!sparse ).ceiling )
+        !! $items;
+
     my $i = 1;
-    my $supply = $items.Supply.throttle(
+    my $supply = $to-run.Supply.throttle(
         $!threads,
         -> $item {
             $sub($item);
