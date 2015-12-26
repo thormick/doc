@@ -117,31 +117,31 @@ sub viz-hints ($group) {
     return q{} unless $group eq 'Any';
 
     return Q:to/END/;
-    subgraph "cluster: Mu children" {
+    subgraph 'cluster: Mu children' {
         rank=same;
         style=invis;
-        "Any";
-        "Junction";
+        'Any';
+        'Junction';
     }
-    subgraph "cluster: Pod:: top level" {
+    subgraph 'cluster: Pod:: top level' {
         rank=same;
         style=invis;
-        "Pod::Config";
-        "Pod::Block";
+        'Pod::Config';
+        'Pod::Block';
     }
-    subgraph "cluster: Date/time handling" {
+    subgraph 'cluster: Date/time handling' {
         rank=same;
         style=invis;
-        "Date";
-        "DateTime";
-        "DateTime-local-timezone";
+        'Date';
+        'DateTime';
+        'DateTime-local-timezone';
     }
-    subgraph "cluster: Collection roles" {
+    subgraph 'cluster: Collection roles' {
         rank=same;
         style=invis;
-        "Positional";
-        "Associative";
-        "Baggy";
+        'Positional';
+        'Associative';
+        'Baggy';
     }
     END
 }
