@@ -42,9 +42,20 @@ method BUILD (
 ) { }
 
 method run {
+    self!maybe-say( "Using $!threads thread" ~ ( $!threads > 1 ?? 's' !! q{} ) );
+    self!maybe-blank-line;
+
     self!maybe-write-type-graph-images;
+    self!maybe-blank-line;
+
+    self!process-home-page;
+    self!maybe-blank-line;
+
     self!process-language-pod;
+    self!maybe-blank-line;
+
     self!process-type-pod;
+    self!maybe-blank-line;
 }
 
 method !maybe-write-type-graph-images {
@@ -68,7 +79,10 @@ method !maybe-write-type-graph-images {
 }
 
 method !write-type-graph-images (IO::Path $image-dir) {
-    self!maybe-say: "Writing type graph images to $image-dir {$!threads > 1 ?? qq{with $!threads threads } !! q{}}...";
+    self!maybe-say: "Writing type graph images to $image-dir ...";
+    if $image-dir !~~ :e {
+        $image-dir.mkdir(0o0755);
+    }
     self!run-with-progress(
         $!type-graph.sorted.cache,
         sub ($type) { self!write-one-type( $type, $image-dir ) },
@@ -146,24 +160,40 @@ sub viz-hints ($group) {
     END
 }
 
-method !process-language-pod {
-    my $kind = 'Language';
+method !process-home-page {
+    self!maybe-say('Writing home page ...');
 
-    my @files = self!find-pod-files-in($kind);
+    my $template-file = IO::Path.new( $*SPEC.catfile( $!root, 'doc', 'index.html' ) ) ;
+    my $html =
+        DocSite::Pod::To::HTML.default-prelude
+            .subst( /'___TITLE___'/, 'Perl 6 Documentation' )
+            .subst( /'___METADATA___'/, q{} )
+            ~ $template-file.slurp ~ DocSite::Pod::To::HTML.default-postlude;
+
+    my $html-file = IO::Path.new( $*SPEC.catfile( $!root, 'html', 'index.html' ) );
+    $html-file.spurt($html);
+}
+
+method !process-language-pod {
+    self!process-pod-in('Language');
+}
+
+method !process-type-pod {
+}
+
+method !process-pod-in (Str $dir) {
+    my @files = self!find-pod-files-in($dir);
     if $!sparse {
          @files = @files[^(@files / $!sparse).ceiling];
     }
 
-    self!maybe-say("Reading and process $kind pod files ...");
+    self!maybe-say("Reading and processing $dir pod files ...");
     self!run-with-progress(
         @files,
         sub ($file) {
-            self!process-one-pod( $file, $kind );
+            self!process-one-pod($file);
         }
-    )
-}
-
-method !process-type-pod {
+    );
 }
 
 method !find-pod-files-in (Str $dir) {
@@ -194,45 +224,45 @@ method !recursive-files-in($dir) {
     }
 }
 
-method !process-one-pod (IO::Path $file, Str $kind) {
-    my $pod = EVAL( $file.slurp ~ "\n\$=pod[0]" );
-    my $pth = DocSite::Pod::To::HTML.new;
-    my $html = $pth.pod-to-html($pod);
-
-    self!spurt-html-file( $file, $kind, $html);
+method !process-one-pod (IO::Path $pod-file, Bool $expect-titles) {
+    my $doc = DocSite::Documentable.new-from-file( $pod-file, $!type-graph, $expect-titles );
+    self!spurt-html-file( $pod-file, $doc );
+    $!registry.add-new($doc);
 }
 
-method !spurt-html-file (IO::Path $file, Str $kind, Str $html) {
-    my $dir = IO::Path.new( $*SPEC.catfile( $!root, 'html', $kind.lc ) );
+method !spurt-html-file (IO::Path $pod-file, DocSite::Documentable $doc) {
+    my $dir = IO::Path.new( $*SPEC.catfile( $!root, 'html', $doc.kind.lc ) );
     unless $dir ~~ :e {
         $dir.mkdir(0o755);
     }
 
-    IO::Path.new( $*SPEC.catfile( $dir, $file.basename.subst( / '.pod' $ /, '.html' ) ) )
-        .spurt($html);
+    my $html-file = $*SPEC.catfile(
+        $dir,
+        $pod-file.basename.subst( / '.pod' $ /, '.html' ),
+    );
+    IO::Path.new($html-file).spurt( $doc.html );
 }
 
 method !run-with-progress ($items, Routine $sub, Str $msg = q{   done}) {
     my $prog = Term::ProgressBar.new( :count( $items.elems ), :p )
         if $!verbose;
 
-    my $supply = $items.Supply;
-
-    if $!threads > 1 {
-        my $sched = ThreadPoolScheduler
-            .new( :max_threads($!threads) );
-        $supply.schedule-on($sched);
-    }
-
     my $i = 1;
-    $supply.tap(
-        sub ($item) {
+    my $supply = $items.Supply.throttle(
+        $!threads,
+        -> $item {
             $sub($item);
-            $prog.?update($i);
-            $i++;
+            $prog.?update($i++);
         }
     );
+    $supply.wait;
+
     $prog.?message($msg);
+}
+
+method !maybe-blank-line {
+    return unless $!verbose;
+    print "\n"
 }
 
 method !maybe-say (*@things) {
