@@ -1,7 +1,7 @@
 use v6;
+
 unit class DocSite::Generator;
 
-use lib 'lib';
 use DocSite::Documentable;
 use DocSite::Documentable::Registry;
 use DocSite::TypeGraph::Viz;
