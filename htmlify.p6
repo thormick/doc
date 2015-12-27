@@ -21,69 +21,26 @@ use MONKEY-SEE-NO-EVAL;
 
 BEGIN say 'Initializing ...';
 
-use Pod::To::HTML;
 use URI::Escape;
-use lib 'lib';
-use Perl6::TypeGraph;
-use Perl6::TypeGraph::Viz;
+
+use lib 'lib', '../Pod-TreeWalker/lib';
+use DocSite::Pod::To::HTML;
 use Perl6::Documentable::Registry;
+use Perl6::TypeGraph::Viz;
+use Perl6::TypeGraph;
 use Pod::Convenience;
 use Pod::Htmlify;
-
-use experimental :cached;
 
 my $type-graph;
 my %routines-by-type;
 my %*POD2HTML-CALLBACKS;
 
-# TODO: Generate menulist automatically
-my @menu =
-    ('language',''         ) => (),
-    ('type', 'Types'       ) => <basic composite domain-specific exceptions>,
-    ('routine', 'Routines' ) => <sub method term operator>,
-#    ('module', 'Modules'   ) => (),
-#    ('formalities',''      ) => ();
-;
-
-my $head   = slurp 'template/head.html';
-sub header-html ($current-selection = 'nothing selected') is cached {
-    state $header = slurp 'template/header.html';
-
-    my $menu-items = [~]
-        q[<div class="menu-items dark-green">],
-        @menu>>.key.map(-> ($dir, $name) {qq[
-            <a class="menu-item {$dir eq $current-selection ?? "selected darker-green" !! ""}"
-                href="/$dir.html">
-                { $name || $dir.wordcase }
-            </a>
-        ]}), #"
-        q[</div>];
-
-    my $sub-menu-items = '';
-    state %sub-menus = @menu>>.key>>[0] Z=> @menu>>.value;
-    if %sub-menus{$current-selection} -> $_ {
-        $sub-menu-items = [~]
-            q[<div class="menu-items darker-green">],
-            qq[<a class="menu-item" href="/$current-selection.html">All</a>],
-            .map({qq[
-                <a class="menu-item" href="/$current-selection\-$_.html">
-                    {.wordcase}
-                </a>
-            ]}),
-            q[</div>]
-    }
-
-    state $menu-pos = ($header ~~ /MENU/).from;
-    $header.subst('MENU', :p($menu-pos), $menu-items ~ $sub-menu-items);
-}
-
 sub p2h($pod, $selection = 'nothing selected', :$pod-path = 'unknown') {
-    pod2html $pod,
-        :url(&url-munge),
-        :$head,
-        :header(header-html $selection),
-        :footer(footer-html($pod-path)),
-        :default-title("Perl 6 Documentation"),
+    return DocSite::Pod::To::HTML.new(
+        :selection($selection),
+        :pod-path($pod-path),
+        :title('Perl 6 Documentation'),
+    ).pod-to-html($pod);
 }
 
 sub recursive-dir($dir) {
@@ -243,9 +200,9 @@ multi write-type-source($doc) {
         to the documentation pages for the related types. If not, try the
         <a href="/images/type-graph-{uri_escape $podname}.png">PNG
         version</a> instead.</p>];
-        $pod.contents.append: Pod::Raw.new(
-            target => 'html',
-            contents => $tg-preamble ~ svg-for-file("html/images/type-graph-$podname.svg"),
+        $pod.contents.append: Pod::Block::Named.new(
+            name => 'html',
+            contents => [$tg-preamble ~ svg-for-file("html/images/type-graph-$podname.svg")],
 
         );
 
