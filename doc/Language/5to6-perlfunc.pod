@@ -32,11 +32,11 @@ function in the style of C<@args.func>.
 
 =head1 SOURCES
 
-I'm taking my information from L<http://doc.perl6.org>, supplemented by the
-design documents at L<http://design.perl6.org/> and input from the denizens
+I'm taking my information from L<https://doc.perl6.org>, supplemented by the
+design documents at L<https://design.perl6.org/> and input from the denizens
 of #perl6 on irc.freenode.org
 
-=head2 Alphabetical Listing of Perl Functions
+=head1 Alphabetical Listing of Perl Functions
 
 =head2 Filetests
 
@@ -56,41 +56,41 @@ traditional way (although you can) to do a filetest. You can simply append
 C<.IO> to the filename. For instance, here is how to check if a file is
 readable using smart match:
 
-C<'/path/to/file'.IO ~~ :r>
+    '/path/to/file'.IO ~~ :r
 
 You can, of course, use an already opened filehandle. Here, using the file
 handle C<$fh>, is an example, using the method syntax for the file test:
 
-C<$fh.r>
+    $fh.r
 
 Most of the former filetests have colon equivalents for use with smart match:
 
-:e Exists
-:d Directory
-:f File
-:l Symbolic link
-:r Readable
-:w Writable
-:x Executable
-:s Size
-:z Zero size
+    :e Exists
+    :d Directory
+    :f File
+    :l Symbolic link
+    :r Readable
+    :w Writable
+    :x Executable
+    :s Size
+    :z Zero size
 
 All of these tests can be used as methods (without the colon).
 
 Three tests, however, I<only> have method equivalents:
 
-C<-M $fh> => C<$fh.modified>
-C<-A $fh> => C<$fh.accessed>
-C<-C $fh> => C<$fh.changed>
+    $fh.modified; # -M $fh
+    $fh.accessed; # -A $fh
+    $fh.changed;  # -C $fh
 
 The remaining filetests in Perl 5 do not appear to be implemented
 in Perl 6.
 
 The documentation for this can be found at
-L<http://doc.perl6.org/type/IO::FileTestable#File_Test_operators>.
+L<https://doc.perl6.org/type/IO::Path#File_Test_operators>.
 
 There is more information on reading and writing files at
-L<http://doc.perl6.org/language/io>. Also, the section on C<open()>
+L<https://doc.perl6.org/language/io>. Also, the section on C<open()>
 below may be helpful.
 
 =head2 abs
@@ -130,8 +130,8 @@ find a true analog.
 Available as a function as well as being able to be used as a method.
 For instance, these are equivalent:
 
-C<atan2(100)>
-C<100.atan2>
+    atan2(100);
+    100.atan2;
 
 =head2 bind
 
@@ -167,7 +167,7 @@ still be useful.
 
 Not in Perl 6. For breaking out of C<given> blocks, you should probably take a
 look at C<proceed> and C<succeed>
-(L<http://doc.perl6.org/language/control#proceed_and_succeed>).
+(L<https://doc.perl6.org/language/control#proceed_and_succeed>).
 
 =head2 caller
 
@@ -211,7 +211,7 @@ method, i. e. C<$y = $x.chomp>.
 
 =item chop VARIABLE
 
-As with C<chomp>, in Perl6, this returns the chopped string, rather than chopping in
+As with C<chomp>, in Perl 6, this returns the chopped string, rather than chopping in
 place. I. e. C<$x = "howdy";$y = chop($x);> results in C<$x> being "howdy" and
 C<$y> being "howd". Also works as a method: C<$y = $x.chop>
 
@@ -229,8 +229,8 @@ Similar to the Perl 5 version, coerces the target to an integer, and uses that
 as a Unicode code point to return the relevant character. Can be used as a
 function and a method:
 
-C<chr(65); # "A">
-C<65.chr;  # "A">
+    chr(65); # "A"
+    65.chr;  # "A"
 
 =head2 chroot
 
@@ -316,7 +316,11 @@ C<my $deleted_value = @array[$i]:delete;>.
 
 Works similarly to the Perl 5 version, but Perl 6's Exception mechanism
 may give you more power and flexibility than is available in Perl 5.
-See L<http://doc.perl6.org/language/exceptions>.
+See L<https://doc.perl6.org/language/exceptions>. To omit the stacktrace
+and location, like Perl 5's C<die "...\n">, use:
+
+    note "...";
+    exit 1;
 
 =head2 do
 
@@ -339,16 +343,16 @@ According to S29, C<dump> has been... dumped.
 
 =item each HASH
 
-There is no exact equivalent. The closest is probably <%hash.kv> which returns
-a list of keys and values. Ergo: C<for %hash.kv -> $k, $v { #do stuff with $k
-and $v }>
+There is no exact equivalent, but you can use C<%hash.kv> which
+returns a list of keys and values. For example:
+C<< for %hash.kv -> $k, $v { say "$k: $v" } >>
 
 Incidentally, what we have there with the C<< -> >> is called a pointy
 block and, though there are a number of examples in the documentation,
 there doesn't seem to be a really clear explanation of how they work.
-L<http://design.perl6.org/S04.html#The_for_statement> may be of some
+L<https://design.perl6.org/S04.html#The_for_statement> may be of some
 help here, as well as the design document at
-L<http://design.perl6.org/S06.html#%22Pointy_blocks%22>. There is also
+L<https://design.perl6.org/S06.html#%22Pointy_blocks%22>. There is also
 some information at L<https://en.wikibooks.org/wiki/Perl_6_Programming/-
 Blocks_and_Closures#Pointy_Blocks>
 
@@ -389,8 +393,8 @@ shell($command);>
 
 In Perl 6, this is not a function, but an adverb:
 
-C<%hash{$key}:exists;>
-C<@array[$i]:exists;>
+    %hash{$key}:exists;
+    @array[$i]:exists;
 
 =head2 exit
 
@@ -408,7 +412,7 @@ Same as in Perl 5, but can also be used as a method: C<5.exp>;
 
 =item fc EXPR
 
-Looks like it would do the same thing as in Perl 5... if it were implemented.
+Looks like it does the same thing as in Perl 5.
 
 =head2 fcntl
 
@@ -612,9 +616,8 @@ may not be the best way to go for this.
 Was never a builtin function in Perl 5 in the first place. In Perl 6,
 typically, one declares functions as exportable or not, and all the
 exportable ones are exported. Nevertheless, selective importing is
-possible, but beyond the scope of this document. For details, see L<-
-http://doc.perl6.org/language/5to6#Importing_specific_functions_from-
-_a_module>.
+possible, but beyond the scope of this document. For details, see 
+L<https://doc.perl6.org/language/5to6-nutshell#Importing_specific_functions_from_a_module>.
 
 =head2 index
 
@@ -657,7 +660,7 @@ Works as in Perl 5, and can also be used as a method: C<%hash.keys>
 
 =item kill SIGNAL
 
-Now part of the C<Proc::ASync> class, but looks to work as in Perl 5.
+Now part of the L<Proc::Async> class, but looks to work as in Perl 5.
 
 =head2 last
 
@@ -779,7 +782,7 @@ operator still exists. If you're trying to rewrite some Perl 5 code, the
 most important difference is that C<=~> is replaced by the smart match
 operator, C<~~>. Similarly, C<!~> is replaced by C<!~~>. Options for
 regex operators are adverbs and are complicated. For details, see
-L<http://doc.perl6.org/language/regexes#Adverbs>
+L<https://doc.perl6.org/language/regexes#Adverbs>
 
 =head2 map
 
@@ -797,9 +800,11 @@ used as a method: C<@new = @old.map: { $_ * 2 }>
 
 =item mkdir FILENAME
 
+Works as in Perl 5.
+
 =item mkdir
 
-Works as in Perl 5.
+The zero argument (implicit C<$_>) version is not permitted in Perl 6.
 
 =head2 msg*
 
@@ -871,7 +876,7 @@ The most obvious change from Perl 5 is the file mode syntax. To open a
 file for reading only, you would say C<open("file", :r)>. For write-
 only, read-write, and append, you would use C<:w>, C<:rw>, and C<:a>
 respectively. There are also options for encoding and how the filehandle
-deals with newlines. Details at L<http://doc.perl6.org/routine/open>.
+deals with newlines. Details at L<https://doc.perl6.org/routine/open>.
 
 =head2 opendir
 
@@ -879,9 +884,9 @@ deals with newlines. Details at L<http://doc.perl6.org/routine/open>.
 
 Not a builtin function in Perl 6. You would use the IO::Path class:
 
-C<my $dir = IO::Path.new("directory")>
+    my $dir = IO::Path.new("directory");
 
-C<my $dir = "directory".IO; # Same, but probably more direct>
+    my $dir = "directory".IO; # Same, but probably more direct
 
 =head2 ord
 
@@ -907,7 +912,7 @@ The same in Perl 6.
 
 Available in Perl 6. The template options are currently more restricted
 than they are in Perl 5. The current documented list can be found at
-L<http://doc.perl6.org/routine/unpack>.
+L<https://doc.perl6.org/routine/unpack>.
 
 =head2 package
 
@@ -955,7 +960,7 @@ Works in Perl 6, and can also be used as a method. I. e. C<my $x = pop
 Not available in Perl 6. The closest equivalent is the C<:c> adverb,
 which defaults to C<$/.to> if C<$/> is true, and C<0> if it isn't. For
 information on C<:c>, see
-L<http://doc.perl6.org/language/regexes#Continue>.
+L<https://doc.perl6.org/language/regexes#Continue>.
 
 =head2 print
 
@@ -968,10 +973,10 @@ L<http://doc.perl6.org/language/regexes#Continue>.
 =item print
 
 C<print> can be used as a function in Perl 6, defaulting to standard
-out. To use C<print> as a function with a filehndle I<instead> of
+out. To use C<print> as a function with a filehandle I<instead> of
 standard out, you need to put a colon after the filehandle. I. e.
 C<print $fh: "Howdy!">. The use of the colon as an "invocant marker"
-here is discussed at L<http://design.perl6.org/S03.html#line_4019>.
+here is discussed at L<https://design.perl6.org/S03.html#line_4019>.
 Alternately, you can use a method call: C<$fh.print("howdy!")>
 
 =head2 printf
@@ -997,9 +1002,11 @@ $format, *@args)".
 =item push ARRAY,LIST
 
 Works as in Perl 5, as well as being available as a method:
-C<@a.push("foo");>
+C<@a.push("foo");>. I<Note:> the flattening behaviour is different in Perl 6:
+C<@b.push: @a> will push C<@a> into C<@b> as a single element. See also the
+L<append method|/type/Array#method_append>.
 
-=head2 quoting 
+=head2 quoting
 
 =item q/STRING/
 
@@ -1011,12 +1018,12 @@ C<@a.push("foo");>
 
 These survive the transition to Perl 6. Some notes:
 
-C<q/.../> is still equivalent to using single quotes.
-C<qq/.../> is still equivalent to using double quotes.
-C<qw/.../> is more commonly rendered as C<< <...> >> in Perl 6.
+    q/.../ # is still equivalent to using single quotes.
+    qq/.../ # is still equivalent to using double quotes.
+    qw/.../ # is more commonly rendered as C<< <...> >> in Perl 6.
 
 There are some added quoting constructs and equivalents, as explained at
-L<http://doc.perl6.org/language/quoting>.
+L<https://doc.perl6.org/language/quoting>.
 
 =item qr/STRING/
 
@@ -1030,7 +1037,7 @@ C<$foo> will treat C<$foo> as a literal string, and using C<< <$foo> >>
 will interpret the contents of C<$foo> as regex code. Note that the
 angle brackets are doing something different here than they do outside a
 regex. For more information on this, see
-L<http://design.perl6.org/S05.html#Extensible_metasyntax_(%3C...%3E)>
+L<https://design.perl6.org/S05.html#Extensible_metasyntax_(%3C...%3E)>
 
 =head2 rand
 
@@ -1041,8 +1048,8 @@ it an argument. You can, however, use it as a method on a number to get
 that behavior. I. e. the Perl 5 C<rand(100)> is equivalent to
 C<100.rand> in Perl 6. Additionally, you can get a random integer by
 using something like C<(^100).pick>. For I<why> you are able to do that,
-see L<http://doc.perl6.org/language/operators#prefix_%5E> and
-L<http://doc.perl6.org/routine/pick>.
+see L<https://doc.perl6.org/language/operators#prefix_%5E> and
+L<https://doc.perl6.org/routine/pick>.
 
 =head2 read
 
@@ -1058,7 +1065,7 @@ documented to exist at this time.
 =item readdir DIRHANDLE
 
 Not a builtin function. To iterate through the contents of a directory,
-take a look at L<http://doc.perl6.org/type/IO::Path#routine_dir>.
+take a look at L<https://doc.perl6.org/type/IO::Path#routine_dir>.
 
 =head2 readline
 
@@ -1066,7 +1073,7 @@ take a look at L<http://doc.perl6.org/type/IO::Path#routine_dir>.
 
 Not available in Perl 6. You most likely want to use the C<.lines>
 method in some way. For more detailed information on reading from files,
-see L<http://doc.perl6.org/language/io>.
+see L<https://doc.perl6.org/language/io>.
 
 =head2 readlink
 
@@ -1173,7 +1180,7 @@ substitution operator exists. If you're trying to rewrite some
 Perl 5 code, the most important difference is that C<=~> is replaced
 by the smart match operator, C<~~>. Similarly, C<!~> is C<!~~>.
 Options for regex operators are adverbs and are complicated. For
-details, see L<http://doc.perl6.org/language/regexes#Adverbs>
+details, see L<https://doc.perl6.org/language/regexes#Adverbs>
 
 =head2 say
 
@@ -1187,7 +1194,7 @@ C<say> can be used as a function, defaulting to standard out. To use
 C<say> as a function with a filehandle I<instead> of standard out, you
 need to put a colon after the filehandle. I. e. C<say $fh: "Howdy!">.
 The use of the colon as an "invocant marker" here is discussed at
-L<http://design.perl6.org/S03.html#line_4019>. Alternately, you can use
+L<https://design.perl6.org/S03.html#line_4019>. Alternately, you can use
 a method call: C<$fh.say("howdy!")>
 
 =head2 scalar
@@ -1309,10 +1316,10 @@ Not currently documented, but will likely wind up in C<IO::Socket>.
 =item sort SUBNAME LIST
 
 C<sort> exists in Perl 6, but is somewhat different. C<$a> and C<$b> are
-no longer special (See L<5to6-perlvar.pod>) and sort routines no
+no longer special (See L<5to6-perlvar>) and sort routines no
 longer return positive integers, negative integers, or 0, but rather
 C<Order::Increase>, C<Order::Same>, or C<Order::Decrease> objects. See
-L<http://doc.perl6.org/routine/sort> for details. May also be used as a
+L<https://doc.perl6.org/routine/sort> for details. May also be used as a
 method I. e. C<sort(@a)> is equivalent to C<@a.sort>.
 
 =head2 splice
@@ -1342,7 +1349,6 @@ Available in Perl 6. Can also be used as a method. C<< splice(@foo, 2,3,
 
 =item split /PATTERN/
 
-=item split
 
 Works mostly as in Perl 5. There are some exceptions, though. To get the
 special behavior of using the empty string, you must actually use the
@@ -1353,8 +1359,13 @@ you wish to have the delimiters included in the resulting list, you need
 to use the named parameter C<:all>, like this: C<split(';', "a;b;c",
 :all) # a ; b ; c> Empty chunks are not removed from the result list as
 they are in Perl 5. For that behavior, see C<comb>. Details on C<split>
-are at L<http://doc.perl6.org/routine/split>. Unsurprisingly, C<split>
+are at L<https://doc.perl6.org/routine/split>. Unsurprisingly, C<split>
 also now works as a method: C<"a;b;c".split(';')>
+
+=item split
+
+The zero argument version must now be called with an explicit empty string, as
+described above.
 
 =head2 sprintf
 
@@ -1362,41 +1373,45 @@ also now works as a method: C<"a;b;c".split(';')>
 
 Works as in Perl 5. The formats currently available are:
 
-%   a literal percent sign
-c   a character with the given codepoint
-s   a string
-d   a signed integer, in decimal
-u   an unsigned integer, in decimal
-o   an unsigned integer, in octal
-x   an unsigned integer, in hexadecimal
-e   a floating-point number, in scientific notation
-f   a floating-point number, in fixed decimal notation
-g   a floating-point number, in %e or %f notation
-X   like x, but using uppercase letters
-E   like e, but using an uppercase "E"
-G   like g, but with an uppercase "E" (if applicable)
+=table
+    %   a literal percent sign
+    c   a character with the given codepoint
+    s   a string
+    d   a signed integer, in decimal
+    u   an unsigned integer, in decimal
+    o   an unsigned integer, in octal
+    x   an unsigned integer, in hexadecimal
+    e   a floating-point number, in scientific notation
+    f   a floating-point number, in fixed decimal notation
+    g   a floating-point number, in %e or %f notation
+    X   like x, but using uppercase letters
+    E   like e, but using an uppercase "E"
+    G   like g, but with an uppercase "E" (if applicable)
 
 Compatibility:
 
-i   a synonym for %d
-D   a synonym for %ld
-U   a synonym for %lu
-O   a synonym for %lo
-F   a synonym for %f
+=table
+    i   a synonym for %d
+    D   a synonym for %ld
+    U   a synonym for %lu
+    O   a synonym for %lo
+    F   a synonym for %f
 
 Perl 5 (non-)compatibility:
 
-n   produces a runtime exception
-p   produces a runtime exception
+=table
+    n   produces a runtime exception
+    p   produces a runtime exception
 
 There are modifiers for integers, but they're mainly no-ops, as the
 semantics aren't settled:
 
-h  interpret integer as native "short" (typically int16)
-l  interpret integer as native "long" (typically int32 or int64)
-ll interpret integer as native "long long" (typically int64)
-L  interpret integer as native "long long" (typically uint64)
-q  interpret integer as native "quads" (typically int64 or larger)
+=table
+    h   interpret integer as native "short" (typically int16)
+    l   interpret integer as native "long" (typically int32 or int64)
+    ll  interpret integer as native "long long" (typically int64)
+    L   interpret integer as native "long long" (typically uint64)
+    q   interpret integer as native "quads" (typically int64 or larger)
 
 =head2 sqrt
 
@@ -1458,7 +1473,7 @@ C<@_> still contains what is passed to the function. So, in theory, you
 don't need to change that aspect of a function if porting from Perl 5 to
 Perl 6 (although you should probably consider the option of using a
 signature). For all the gory details, see
-L<http://doc.perl6.org/language/functions>.
+L<https://doc.perl6.org/language/functions>.
 
 =head2 __SUB__
 
@@ -1513,8 +1528,8 @@ C<IO> classes somewhere.
 
 =item system PROGRAM LIST
 
-For this, you probably want C<run> (L<http://doc.perl6.org/routine/run>)
-or C<shell> (L<http://doc.perl6.org/routine/shell>).
+For this, you probably want C<run> (L<https://doc.perl6.org/routine/run>)
+or C<shell> (L<https://doc.perl6.org/routine/shell>).
 
 =head2 syswrite
 
@@ -1574,7 +1589,7 @@ better documented, called C<.trans>. C<.trans> uses a list of pairs, as
 follows: C<< $x.trans(['a'..'c'] => ['A'..'C'], ['d'..'q'] =>
 ['D'..'Q'], ['r'..'z'] => ['R'..'Z']); >> A much more extensive
 description of the uses of C<.trans> can be found at
-L<http://design.perl6.org/S05.html#Transliteration>. The C<y///>
+L<https://design.perl6.org/S05.html#Transliteration>. The C<y///>
 equivalent has been done away with.
 
 =head2 truncate
@@ -1598,7 +1613,7 @@ Works as a function and a method. C<uc("ha")> and C<"ha".uc> both return "HA".
 =item ucfirst
 
 Perl 6 has done away with C<ucfirst>. The title case function C<tc> probably
-does what you need here. L<http://doc.perl6.org/routine/tc>
+does what you need here. L<https://doc.perl6.org/routine/tc>
 
 =head2 umask
 
@@ -1622,9 +1637,12 @@ callframe.annotations<file line>;>
 
 =item unlink LIST
 
+Still available. Usable as a method: C<"filename".IO.unlink>
+
 =item unlink
 
-Still available. Usable as a method: C<"filename".IO.unlink>
+The zero argument (implicit C<$_>) version of unlink is not available in Perl
+6.
 
 =head2 unpack
 
@@ -1634,7 +1652,7 @@ Still available. Usable as a method: C<"filename".IO.unlink>
 
 Available in Perl 6. The template options are currently more restricted
 than they are in Perl 5. The current documented list can be found at
-L<http://doc.perl6.org/routine/unpack>.
+L<https://doc.perl6.org/routine/unpack>.
 
 
 =head2 unshift
@@ -1716,7 +1734,74 @@ As with C<wait>, the disposition of this is unclear.
 
 =item wantarray
 
-There is no C<wantarray> in Perl 6.
+There is no C<wantarray> in Perl 6, because L<reasons|/language/faq#Why_is_wantarray_or_want_gone?_Can_I_return_different_things_in_different_contexts?>.
+
+There are very easy ways to cover many of the use cases which wantarray filled.
+
+First, since Perl 6 does not need special reference syntax to contain
+a C<List> or C<Array> in a C<Scalar>, simply returning a list may be
+all that is needed:
+
+    sub listofstuff {
+        return 1,2,3;
+    }
+    my $a = listofstuff();
+    print $a;                     # prints "123"
+    print join("<",listofstuff()) # prints "1<2<3"
+
+One of the most common use cases is to provide either an array of lines
+or elements, or a prettier string than would be produced by simply
+printing the array.  One can mix in a custom C<.Str> method for this
+purpose:
+
+    sub prettylist(*@origlist) {
+        @origlist but role {
+            method Str { self.join("<") }
+        }
+    }
+    print prettylist(1,2,3);  # prints "1<2<3"
+    print join(">", prettylist(3,2,1)); # prints "3>2>1"
+
+In the above example, the returned list may be lazy, and the C<.Str> method
+is not called until stringification happens, so no extra work is done
+to generate something which is not asked for.
+
+Another use case is to create methods which are mutators when called
+in void context but produce copies during assignment.  It is generally
+considered better form in Perl 6 not to do so, since users can quite
+easily turn any copy-producing method into a mutator using the C<.=>
+operator:
+
+    my $a = "foo\n";
+    $a.ords.say; # says "(102 111 111 10)"
+    $a .= chomp;
+    $a.ords.say; # says "(102 111 111)"
+
+However if you have your heart set on using the same function
+name for both operations, you can get most of the way there by mixing in
+a C<.sink> method, which will be called when the result finds itself
+in void context.  There are some caveats however, so again, this is
+not advised:
+
+    multi sub increment($b is rw) {
+        ($b + 1) does role { method sink { $b++ } }
+    }
+    multi sub increment($b) {
+        $b + 1
+    }
+    my $a = 1;
+    increment($a);
+    say $a;                 # says "2"
+    my $b = increment($a);
+    say $a, $b;             # says "2 3"
+    # ...users will just have to be aware that they should not accidentally
+    # sink a stored value later, though this requires some effort to
+    # actually do:
+    sub identity($c is rw) { $c };
+    $a = 1;
+    $b = increment($a);
+    identity($b);
+    $a.say;                  # says "2"
 
 =head2 warn
 
@@ -1724,7 +1809,7 @@ There is no C<wantarray> in Perl 6.
 
 C<warn> throws an exception. To simply print a message to C<$*ERR>, you
 would use the C<note> function. For more on exceptions, see
-L<http://doc.perl6.org/language/exceptions>.
+L<https://doc.perl6.org/language/exceptions>.
 
 =head2 write
 

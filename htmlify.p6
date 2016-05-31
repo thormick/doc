@@ -29,9 +29,13 @@ use Perl6::Documentable::Registry;
 use Pod::Convenience;
 use Pod::Htmlify;
 
+use experimental :cached;
+use experimental :pack;
+
 my $type-graph;
 my %routines-by-type;
 my %*POD2HTML-CALLBACKS;
+my %p5to6-functions;
 
 # TODO: Generate menulist automatically
 my @menu =
@@ -42,8 +46,8 @@ my @menu =
 #    ('formalities',''      ) => ();
 ;
 
-my $head   = slurp 'template/head.html';
-sub header-html ($current-selection = 'nothing selected') is cached {
+my $head = slurp 'template/head.html';
+sub header-html($current-selection = 'nothing selected') is cached {
     state $header = slurp 'template/header.html';
 
     my $menu-items = [~]
@@ -67,7 +71,7 @@ sub header-html ($current-selection = 'nothing selected') is cached {
                     {.wordcase}
                 </a>
             ]}),
-            q[</div>]
+            q[</div>];
     }
 
     state $menu-pos = ($header ~~ /MENU/).from;
@@ -81,6 +85,7 @@ sub p2h($pod, $selection = 'nothing selected', :$pod-path = 'unknown') {
         :header(header-html $selection),
         :footer(footer-html($pod-path)),
         :default-title("Perl 6 Documentation"),
+    ;
 }
 
 sub recursive-dir($dir) {
@@ -92,7 +97,7 @@ sub recursive-dir($dir) {
                 take $f;
             }
             else {
-                @todo.append($f.path);
+                @todo.append: $f.path;
             }
         }
     }
@@ -152,14 +157,32 @@ sub MAIN(
     }
 }
 
+my $precomp-store = CompUnit::PrecompilationStore::File.new(:prefix($?FILE.IO.parent.child("precompiled")));
+my $precomp = CompUnit::PrecompilationRepository::Default.new(store => $precomp-store);
+
+sub extract-pod(IO() $file) {
+    use nqp;
+    # The file name is enough for the id because POD files don't have depends
+    my $id = nqp::sha1(~$file);
+    my $handle = $precomp.load($id,:since($file.modified));
+
+    if not $handle {
+        # precompile it
+        $precomp.precompile($file, $id);
+        $handle = $precomp.load($id);
+    }
+
+    return nqp::atkey($handle.unit,'$=pod')[0];
+}
+
 sub process-pod-dir($dir, :&sorted-by = &[cmp], :$sparse) {
     say "Reading doc/$dir ...";
     my @pod-sources =
-        recursive-dir("doc/$dir/")\
-        .grep({.path ~~ / '.pod' $/})\
-        .map({;
-            .path.subst("doc/$dir/", '')\
-                 .subst(rx{\.pod$},  '')\
+        recursive-dir("doc/$dir/")
+        .grep({.path ~~ / '.pod' $/})
+        .map({
+            .path.subst("doc/$dir/", '')
+                 .subst(rx{\.pod$},  '')
                  .subst(:g,    '/',  '::')
             => $_
         }).sort(&sorted-by);
@@ -172,7 +195,7 @@ sub process-pod-dir($dir, :&sorted-by = &[cmp], :$sparse) {
     my $kind  = $dir.lc;
     for @pod-sources.kv -> $num, (:key($filename), :value($file)) {
         printf "% 4d/%d: % -40s => %s\n", $num+1, $total, $file.path, "$kind/$filename";
-        my $pod  = EVAL(slurp($file.path) ~ "\n\$=pod")[0];
+        my $pod = extract-pod($file.path);
         process-pod-source :$kind, :$pod, :$filename, :pod-is-complete;
     }
 }
@@ -217,7 +240,13 @@ sub process-pod-source(:$kind, :$pod, :$filename, :$pod-is-complete) {
         |%type-info,
     );
 
-    find-definitions :$pod, :$origin;
+    find-definitions :$pod, :$origin, :url("/$kind/$filename");
+    find-references  :$pod, :$origin, :url("/$kind/$filename");
+
+    # Special handling for 5to6-perlfunc
+    if $filename eq '5to6-perlfunc' {
+      find-p5to6-functions(:$pod, :$origin, :url("/$kind/$filename"));
+    }
 }
 
 # XXX: Generalize
@@ -230,7 +259,7 @@ multi write-type-source($doc) {
     say "Writing $what document for $podname ...";
 
     if !$doc.pod-is-complete {
-        $pod = pod-with-title("$doc.subkinds() $podname", $pod[1..*])
+        $pod = pod-with-title("$doc.subkinds() $podname", $pod[1..*]);
     }
 
     if $type {
@@ -262,7 +291,7 @@ multi write-type-source($doc) {
                     ", which provides the following methods:",
                 ),
                 %routines-by-type{$role}.list,
-                ;
+            ;
         }
         for @mro -> $class {
             next unless %routines-by-type{$class};
@@ -274,7 +303,7 @@ multi write-type-source($doc) {
                     ", which provides the following methods:",
                 ),
                 %routines-by-type{$class}.list,
-                ;
+            ;
             for $class.roles -> $role {
                 next unless %routines-by-type{$role};
                 $pod.contents.append:
@@ -287,7 +316,7 @@ multi write-type-source($doc) {
                         ", which provides the following methods:",
                     ),
                     %routines-by-type{$role}.list,
-                    ;
+                ;
             }
         }
     }
@@ -300,8 +329,66 @@ multi write-type-source($doc) {
     spurt $html-filename, p2h($pod, $what, pod-path => $pod-path);
 }
 
+sub find-references(:$pod!, :$url, :$origin) {
+    if $pod ~~ Pod::FormattingCode && $pod.type eq 'X' {
+        register-reference(:$pod, :$origin, :$url);
+    }
+    elsif $pod.?contents {
+        for $pod.contents -> $sub-pod {
+            find-references(:pod($sub-pod), :$url, :$origin) if $sub-pod ~~ Pod::Block;
+        }
+    }
+}
+
+sub find-p5to6-functions(:$pod!, :$url, :$origin) {
+  if $pod ~~ Pod::Heading && $pod.level == 2  {
+      # Add =head2 function names to hash
+      my $func-name = ~$pod.contents[0].contents;
+      %p5to6-functions{$func-name} = 1;
+  }
+  elsif $pod.?contents {
+      for $pod.contents -> $sub-pod {
+          find-p5to6-functions(:pod($sub-pod), :$url, :$origin) if $sub-pod ~~ Pod::Block;
+      }
+  }
+}
+
+sub register-reference(:$pod!, :$origin, :$url) {
+    if $pod.meta {
+        for @( $pod.meta ) -> $meta {
+            my $name;
+            if $meta.elems > 1 {
+                my $last = $meta[*-1];
+                my $rest = $meta[0..*-2].join;
+                $name = "$last ($rest)";
+            }
+            else {
+                $name = $meta.Str;
+            }
+            $*DR.add-new(
+                :$pod,
+                :$origin,
+                :$url,
+                :kind<reference>,
+                :subkinds['reference'],
+                :$name,
+            );
+        }
+    }
+    elsif $pod.contents[0] -> $name {
+        $*DR.add-new(
+            :$pod,
+            :$origin,
+            :$url,
+            :kind<reference>,
+            :subkinds['reference'],
+            :$name,
+        );
+    }
+}
+
 #| A one-pass-parser for pod headers that define something documentable.
-sub find-definitions (:$pod, :$origin, :$min-level = -1) {
+sub find-definitions(:$pod, :$origin, :$min-level = -1, :$url) {
     # Runs through the pod content, and looks for headings.
     # If a heading is a definition, like "class FooBar", processes
     # the class and gives the rest of the pod to find-definitions,
@@ -319,7 +406,7 @@ sub find-definitions (:$pod, :$origin, :$min-level = -1) {
         # Is this new header a definition?
         # If so, begin processing it.
         # If not, skip to the next heading.
-        
+
         my @header;
         try {
             @header := $pod-element.contents[0].contents;
@@ -328,10 +415,21 @@ sub find-definitions (:$pod, :$origin, :$min-level = -1) {
         my @definitions; # [subkind, name]
         my $unambiguous = False;
         given @header {
+            when :(Pod::FormattingCode $) {
+                my $fc := .[0];
+                proceed unless $fc.type eq "X";
+                @definitions = $fc.meta[0].flat;
+                # set default name if none provide so X<if|control> gets name 'if'
+                @definitions[1] = $fc.contents[0] if @definitions == 1;
+                $unambiguous = True;
+            }
+            # XXX: Remove when extra "" have been purged
             when :("", Pod::FormattingCode $, "") {
                 my $fc := .[1];
                 proceed unless $fc.type eq "X";
                 @definitions = $fc.meta[0].flat;
+                # set default name if none provide so X<if|control> gets name 'if'
+                @definitions[1] = $fc.contents[0] if @definitions == 1;
                 $unambiguous = True;
             }
             when :(Str $ where /^The \s \S+ \s \w+$/) {
@@ -344,14 +442,18 @@ sub find-definitions (:$pod, :$origin, :$min-level = -1) {
             }
             when :(Str $ where {m/^trait\s+(\S+\s\S+)$/}) {
                 # Infix Foo
-                @definitions = .split(/\s+/, 2)
+                @definitions = .split(/\s+/, 2);
             }
             when :("The ", Pod::FormattingCode $, Str $ where /^\s (\w+)$/) {
                 # The C<Foo> infix
                 @definitions = .[2].words[0], .[1].contents[0];
             }
-            when :(Str $ where /^(\w+) \s$/, Pod::FormattingCode $, "") {
+            when :(Str $ where /^(\w+) \s$/, Pod::FormattingCode $) {
                 # infix C<Foo>
+                @definitions = .[0].words[0], .[1].contents[0];
+            }
+            # XXX: Remove when extra "" have been purged
+            when :(Str $ where /^(\w+) \s$/, Pod::FormattingCode $, "") {
                 @definitions = .[0].words[0], .[1].contents[0];
             }
             default { next }
@@ -366,10 +468,12 @@ sub find-definitions (:$pod, :$origin, :$min-level = -1) {
                 when / ^ [in | pre | post | circum | postcircum ] fix | listop / {
                     %attr = :kind<routine>,
                             :categories<operator>,
+                    ;
                 }
                 when 'sub'|'method'|'term'|'routine'|'trait' {
                     %attr = :kind<routine>,
                             :categories($subkinds),
+                    ;
                 }
                 when 'class'|'role'|'enum' {
                     my $summary = '';
@@ -380,18 +484,21 @@ sub find-definitions (:$pod, :$origin, :$min-level = -1) {
                         note "$name does not have an =SUBTITLE";
                     }
                     %attr = :kind<type>,
-                            :categories($type-graph.types{$name}.?categories//''),
+                            :categories($type-graph.types{$name}.?categories // ''),
                             :$summary,
+                    ;
                 }
                 when 'variable'|'sigil'|'twigil'|'declarator'|'quote' {
                     # TODO: More types of syntactic features
                     %attr = :kind<syntax>,
                             :categories($subkinds),
+                    ;
                 }
                 when $unambiguous {
                     # Index anything from an X<>
                     %attr = :kind<syntax>,
                             :categories($subkinds),
+                    ;
                 }
                 default {
                     # No clue, probably not meant to be indexed
@@ -415,6 +522,7 @@ sub find-definitions (:$pod, :$origin, :$min-level = -1) {
                 $new-i = $i + find-definitions
                     :pod(@pod-section[$i+1..*]),
                     :origin($created),
+                    :$url,
                     :min-level(@pod-section[$i].level);
             }
 
@@ -469,7 +577,7 @@ sub write-type-graph-images(:$force) {
         my $viz = Perl6::TypeGraph::Viz.new-for-type($type);
         $viz.to-file("html/images/type-graph-{$type}.svg", format => 'svg');
         $viz.to-file("html/images/type-graph-{$type}.png", format => 'png', size => '8,3');
-        print '.'
+        print '.';
     }
     say '';
 
@@ -487,13 +595,13 @@ sub write-type-graph-images(:$force) {
     }
 }
 
-sub viz-group ($type) {
+sub viz-group($type) {
     return 'Metamodel' if $type.name ~~ /^ 'Perl6::Metamodel' /;
     return 'Exception' if $type.name ~~ /^ 'X::' /;
     return 'Any';
 }
 
-sub viz-hints ($group) {
+sub viz-hints($group) {
     return '' unless $group eq 'Any';
 
     return '
@@ -526,24 +634,33 @@ sub viz-hints ($group) {
 ';
 }
 
-sub write-search-file () {
+sub write-search-file() {
     say 'Writing html/js/search.js ...';
     my $template = slurp("template/search_template.js");
     sub escape(Str $s) {
         $s.trans([</ \\ ">] => [<\\/ \\\\ \\">]);
     }
-    my $items = $*DR.get-kinds.map(-> $kind {
+    my @items = $*DR.get-kinds.map(-> $kind {
         $*DR.lookup($kind, :by<kind>).categorize({escape .name})\
             .pairs.sort({.key}).map: -> (:key($name), :value(@docs)) {
-                qq[[\{ label: "{
+                qq[[\{ category: "{
                     ( @docs > 1 ?? $kind !! @docs.[0].subkinds[0] ).wordcase
-                }: $name", value: "$name", url: "{@docs.[0].url}" \}]] #"
+                }", value: "$name", url: "{@docs.[0].url}" \}]] #"
             }
-    }).flat.join(",\n");
-    spurt("html/js/search.js", $template.subst("ITEMS", $items));
+    }).flat;
+
+    # Add p5to6 functions to JavaScript search index
+    @items.append: %p5to6-functions.keys.map( {
+      my $url = "/language/5to6-perlfunc#" ~ $_.subst(' ', '_', :g);
+      sprintf(
+        q[[{ category: "5to6-perlfunc", value: "%s", url: "%s" }]],
+        $_, $url
+      );
+    });
+    spurt("html/js/search.js", $template.subst("ITEMS", @items.join(",\n") ));
 }
 
-sub write-disambiguation-files () {
+sub write-disambiguation-files() {
     say 'Writing disambiguation files ...';
     for $*DR.grouped-by('name').kv -> $name, $p is copy {
         print '.';
@@ -574,10 +691,10 @@ sub write-disambiguation-files () {
                             pod-link(.human-kind, .url),
                             ' from ',
                             pod-link($o.human-kind() ~ ' ' ~ $o.name, $o.url),
-                        )
+                        );
                     }
                     else {
-                        pod-item( pod-link(.human-kind, .url) )
+                        pod-item( pod-link(.human-kind, .url) );
                     }
                 });
         }
@@ -587,10 +704,10 @@ sub write-disambiguation-files () {
     say '';
 }
 
-sub write-index-files () {
+sub write-index-files() {
     say 'Writing html/index.html ...';
     spurt 'html/index.html',
-        p2h(EVAL(slurp('doc/HomePage.pod') ~ "\n\$=pod"),
+        p2h(extract-pod('doc/HomePage.pod'),
             pod-path => 'HomePage.pod');
 
     say 'Writing html/language.html ...';
@@ -637,7 +754,7 @@ sub write-main-index(:$kind, :&summary = {Nil}) {
             "Use the above menu to narrow it down topically."
         ),
         pod-table($*DR.lookup($kind, :by<kind>)\
-            .categorize(*.name).sort(*.key)>>.value\
+            .categorize(*.name).sort(*.key)>>.value
             .map({[
                 .map({.subkinds // Nil}).unique.join(', '),
                 pod-link(.[0].name, .[0].url),
@@ -654,7 +771,7 @@ sub write-sub-index(:$kind, :$category, :&summary = {Nil}) {
         "Perl 6 {$category.tc} {$kind.tc}s",
         pod-table($*DR.lookup($kind, :by<kind>)\
             .grep({$category ⊆ .categories})\ # XXX
-            .categorize(*.name).sort(*.key)>>.value\
+            .categorize(*.name).sort(*.key)>>.value
             .map({[
                 .map({.subkinds // Nil}).unique.join(', '),
                 pod-link(.[0].name, .[0].url),
@@ -666,8 +783,8 @@ sub write-sub-index(:$kind, :$category, :&summary = {Nil}) {
 
 sub write-kind($kind) {
     say "Writing per-$kind files ...";
-    $*DR.lookup($kind, :by<kind>)\
-        .categorize({.name})\
+    $*DR.lookup($kind, :by<kind>)
+        .categorize({.name})
         .kv.map: -> $name, @docs {
             my @subkinds = @docs.map({.subkinds}).unique;
             my $subkind = @subkinds.elems == 1 ?? @subkinds.list[0] !! $kind;
@@ -732,6 +849,9 @@ def p6format(code):
     if $py {
         say "Using syntax highlighting via Inline::Python";
     }
+    else {
+        say "Error using Inline::Python, falling back to pygmentize: ($!)";
+    }
 
     %*POD2HTML-CALLBACKS = code => sub (:$node, :&default) {
         for @($node.contents) -> $c {
@@ -750,7 +870,6 @@ def p6format(code):
             LEAVE try unlink $tmp_fname;
             my $command = "pygmentize -l perl6 -f html < $tmp_fname";
             return qqx{$command};
-
         }
     }
 }

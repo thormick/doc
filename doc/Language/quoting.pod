@@ -25,7 +25,7 @@ possible.
 
 =for code :allow<B>
 Q<Make sure you B«<»matchB«>» opening and closing delimiters>
-Q{This is still a closing brace → B<\>}
+Q{This is still a closing curly brace → B<\>}
 
 These examples produce:
 
@@ -33,7 +33,7 @@ These examples produce:
     More plainly.
     Almost any non-word character can be a delimiter!
     Make sure you <match> opening and closing delimiters
-    This is still a closing brace → \
+    This is still a closing curly brace → \
 
 The other quote forms add to this basic functionality:
 
@@ -43,7 +43,7 @@ The other quote forms add to this basic functionality:
 B<'>Very plainB<'>
 B<q[>This backB<\s>lash staysB<]>
 B<q[>This backB<\\>slash staysB<]> # Identical output
-B<q{>This is not a closing brace → B<\}>, but this is → B<}>
+B<q{>This is not a closing culy brace → B<\}>, but this is → B<}>
 B<Q :q $>There are no backslashes here, only lots of B<\$>B<\$>B<\$>!B<$>
 B<'>(Just kidding. ThereB<\'>s no money in that string)B<'>
 B<'>No $interpolation {here}!B<'>
@@ -60,7 +60,7 @@ These examples produce:
     Very plain
     This back\slash stays
     This back\slash stays
-    This is not a closing brace → } but this is →
+    This is not a closing curly brace → } but this is →
     There are no backslashes here, only lots of $$$!
     (Just kidding. There's no money in that string)
     No $interpolation {here}!
@@ -82,7 +82,7 @@ possible to escape variables within a C<qq>-quoted string:
 =for code :allow<B>
 say B<">The B<\>$color variable contains the value '$color'B<">;
 
-    The $color variable contatins the value 'blue'
+    The $color variable contains the value 'blue'
 
 Another feature of C<qq> is the ability to interpolate Perl 6 code from
 within the string, using curly braces:
@@ -140,7 +140,19 @@ It's easier to write and to read this:
 
     my @directions = <left right up down>;
 
-=head2 X<Word quoting with interpolation: qqw|quote,qqw;quote,« »>
+=head2 X<Word quoting with quote protection: qww|quote,qww>
+
+The C<qw> form of word quoting will treat quote characters literally, leaving them in the
+resulting words:
+
+    say qw{"a b" c}.perl; # ("\"a", "b\"", "c")
+
+Thus, if you wish to preserve quoted sub-strings as single items in the resulting words
+you need to use the C<qww> variant:
+
+    say qww{"a b" c}.perl; # ("a b", "c")
+
+=head2 X<Word quoting with interpolation: qqw|quote,qqw>
 
 The C<qw> form of word quoting doesn't interpolate variables:
 
@@ -153,11 +165,22 @@ you need to use the C<qqw> variant:
     my @list = qqw{$a b c};
     say @list;                # 42 b c
 
+=head2 X<<<Word quoting with interpolation and quote protection: qqww|quote,qqww;quote,<< >>;quote,« »>>>
+
+The C<qqw> form of word quoting will treat quote characters literally, leaving them in the
+resulting words:
+
+    my $a = 42; say qqw{"$a b" c}.perl; # ("\"42", "b\"", "c")
+
+Thus, if you wish to preserve quoted sub-strings as single items in the resulting words
+you need to use the C<qqww> variant:
+
+    my $a = 42; say qqww{"$a b" c}.perl; # ("42 b", "c")
+
 or equivalently:
 
-    my $a = 42;
-    my @list = «$a b c»;
-    say @list;                # 42 b c
+    my $a = 42; say <<"$a b" c>>.perl; # ("42 b", "c")
+    my $a = 42; say «"$a b" c».perl; # ("42 b", "c")
 
 =head2 X<Shell quoting: qx|quote,qx>
 
@@ -210,7 +233,7 @@ Again, the output of the external command can be kept in a variable:
 See also L<shell|/routine/shell> and L<run|/routine/run> for other ways to
 execute external commands.
 
-=head2 Heredocs: :to
+=head2 X<Heredocs: :to|qoute,heredocs :to>
 
 A convenient way to write multi-line string literals are I<heredocs>, which
 let you choose the delimiter yourself:

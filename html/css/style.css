@@ -32,6 +32,12 @@ pre {
     padding: 0.6ex;
     color: black;
     overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+code {
+    color: #666;
 }
 
 pre a, pre a:visited, pre a:link {
@@ -126,7 +132,11 @@ td p {
         margin: 0;
         text-align: center;
     }
+    #home_logo {
+        display: none;
+    }
 }
+
 
 #logo {
     display: inline-block;
@@ -187,6 +197,21 @@ td p {
 
 #query:focus {
     color: #000000;
+}
+
+.ui-autocomplete-category {
+    font-weight: bold;
+    font-style: italic;
+    background-color: #8BC313;
+    padding: 2px 5px;
+    line-height: 1.5;
+}
+.ui-state-focus {
+    font-weight: normal !important; /* override css/custom-theme/jquery-ui.css */
+    font-style: italic;
+}
+.ui-menu .ui-menu-item {
+    padding-left: 1em !important; /* override css/custom-theme/jquery-ui.css */
 }
 
 .menu {
@@ -290,3 +315,22 @@ td p {
     padding: 0 1em;
 }
 
+.title-anchor {
+    visibility: hidden;
+    color: #333;
+    font-size: 60%;
+    margin-left: 10px;
+    display: inline-block;
+    text-decoration: none;
+    vertical-align: 0.5ex;
+    outline: none;
+}
+
+h1:hover .title-anchor,
+h2:hover .title-anchor,
+h3:hover .title-anchor,
+h4:hover .title-anchor,
+h5:hover .title-anchor,
+h6:hover .title-anchor {
+    visibility: visible;
+}

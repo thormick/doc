@@ -2,12 +2,13 @@
 
 =TITLE class X::NoDispatcher
 
-=SUBTITLE Error due to calling a dispatch command in an uneligible scope
+=SUBTITLE Error due to calling a dispatch command in an ineligible scope
 
     class X::NoDispatcher is Exception { }
 
-Error thrown when a redispatcher like C<nextsame> is called without being in the
-dynamic scope of a call that could possible redispatch.
+When a redispatcher like C<nextsame> is called without being in the
+dynamic scope of a call where a redispatch is possible, an X::NoDispatcher is
+thrown.
 
 For example
 

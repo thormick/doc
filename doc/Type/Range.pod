@@ -25,8 +25,8 @@ starting from zero:
     ^$x     # same as 0 ..^ $x.Numeric
 
 Iterating a range (or calling the C<list> method) uses the same semantics as
-the C<++> prefix and postfix operators, i.e. it calls the C<succ> method on
-the start point, and then generated elements).
+the C<++> prefix and postfix operators, i.e., it calls the C<succ> method on
+the start point, and then the generated elements.
 
 Ranges always go from small to larger elements; if the start point is bigger
 than the end point, the range is considered empty.
@@ -39,6 +39,11 @@ than the end point, the range is considered empty.
 Use the C<...> sequence operator to produce lists of elements that
 go from larger to smaller values, or to use offsets other than
 increment-by-1.
+
+Use C<Inf> or C<*> (Whatever) to indicate an end point to be open-ended.
+
+    for 1..* { .say }       # start from 1, continue until stopped
+    for 1..Inf { .say }     # the same
 
 =head1 Methods
 
@@ -74,6 +79,35 @@ otherwise.
 
 Returns a list consisting of the start and end point.
 
+=head2 method infinite
+
+    method infinite(Range:D:) returns Bool:D
+
+Returns C<True> if either end point was declared with C<Inf> or C<*>.
+
+=head2 method is-int
+
+    method is-int(Range:D:) returns Bool:D
+
+Returns C<True> if both end points are C<Int> values.
+
+=head2 method int-bounds
+
+    method bounds(Range:D:) returns Positional
+
+If the C<Range> is an integer range (as indicated by L<is-int>), then this
+method returns a list with the first and last value it will iterate over
+(taking into account L<excludes-min> and L<excludes-max>).  Returns a
+Failure if it is not an integer range.
+
+=head2 method elems
+
+    method elems(Range:D:) returns Numeric:D
+
+Returns the number of elements in the range, e.g. when being iterated over,
+or when used as a C<List>.  Returns Inf if either end point was specified
+as C<Inf> or C<*>.
+
 =head2 method list
 
     method list(Range:D:) returns List:D
@@ -85,5 +119,21 @@ Generates the list of elements that the range represents.
     method flat(Range:D:) returns List:D
 
 Generates the list of elements that the range represents.
+
+=head2 method pick
+
+    method pick(Range:D:        ) returns Any:D
+    method pick(Range:D: $number) returns Seq:D
+
+Performs the same function as C<Range.list.pick>, but attempts to optimize
+by not actually generating the list if it is not necessary.
+
+=head2 method roll
+
+    method roll(Range:D:        ) returns Any:D
+    method roll(Range:D: $number) returns Seq:D
+
+Performs the same function as C<Range.list.roll>, but attempts to optimize
+by not actually generating the list if it is not necessary.
 
 =end pod

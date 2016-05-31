@@ -13,7 +13,7 @@ and call C<.params> on it to obtain a list of the Parameters.
 
     my $sig   = :(Str $x);
     my $param = $sig.params[0];
-    say $sig.type;              # Str()
+    say $param.type;              # Str()
 
 See L<Signature> for more information, and also for an explanation
 on what most of the concepts related to parameters mean.
@@ -177,7 +177,7 @@ in same the signature:
     c("four",5,"six");  # Fails when binding $y, wants Str, not Int
 
 Type captures may be used at the same time as
-L<type costraints|/type/Signature#Type_Constraints>.
+L<type constraints|/type/Signature#Type_Constraints>.
 
     sub d(::T Numeric $x, T $y);
     d(4,5);             # OK
@@ -189,6 +189,6 @@ L<type costraints|/type/Signature#Type_Constraints>.
 
 If the parameter has a
 L<sub-signature|/type/Signature#Destructuring_Parameters>,
-returns a Signature object for it.  Otherwise returns C<Any>.
+returns a C<Signature> object for it.  Otherwise returns C<Any>.
 
 =end pod

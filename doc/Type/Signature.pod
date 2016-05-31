@@ -18,7 +18,7 @@ a L<Capture>, to the signature.
 Signatures appear in parenthesis after subroutine and method names, on
 blocks after a C<< -> >> or C<< <-> >> arrow, as the input to
 L<variable declarators|/language/variables#Variable_Declarators_and_Scope>
-like L<C<my>>, or as a separate term starting with a colon.
+like L<C<my>|/syntax/my>, or as a separate term starting with a colon.
 
 =begin code :allow<B L>
 sub fB<($x)> { }
@@ -38,6 +38,16 @@ my $sig = B<:($a, $b)>;
 #          ^^^^^^^^ Standalone Signature object
 =end code
 
+Signature literals can be used to define the signature of a callback or a
+closure.
+
+	sub f(&c:(Int)){}
+	sub will-work(Int){}
+	sub won't-work(Str){}
+	f(&will-work);
+	f(&won't-work); # fails at runtime
+	f(-> Int { 'this works too' } );
+
 =head2 Parameter Separators
 
 A signature consists of zero or more I<L<parameters|Parameter>>, separated by comma.
@@ -48,14 +58,14 @@ sub add ($aB<,> $b) { $a + $b }
 
 As an exception the first parameter may be followed by a colon instead
 of a comma to mark the invocant of a method.  The invocant is the
-thing that was used to call the method, which is usually bound to L<C<self>>
+object that was used to call the method, which is usually bound to L<C<self>>.
 By specifying it in the signature, you can change the variable name it
 is bound to.
 
 =begin code :allow<B L>
 :(B<$a:> @b, %c)       # first argument is the invocant
 
-L<class> Foo {
+L<class|/syntax/class> Foo {
     method whoami (B<$me:>) {
         "Well I'm class B<$me>.^L<name>(), of course!"
     }
@@ -83,7 +93,9 @@ its type constraint.
 :(B<L<Int>>, B<L<Positional>>)  # just a type is also fine (two parameters)
 sub baz (B<L<Str>>) { "Got passed a Str" }
 
-Type constraints may also be L<type captures|Signature/#method_type_captures>.
+Type constraints may also be L<type captures|/type/Signature#Type_Captures>.
+
+X<|where>
 
 In addition to those I<nominal> types, additional constraints can
 be placed on parameters in the form of code blocks which must return
@@ -149,6 +161,41 @@ say limit-lines "a \n b \n c", Int; # "a \n b \n c"
 For explicitly indicating the normal behaviour, C<:_> can be used, but this is
 unnecessary. C<:(Num:_ $)> is the same as C<:(Num $)>.
 
+=head3 X«Constraining signatures of Callables|function reference (constrain)»
+
+To constrain block and subroutine references based on their signature write
+the signature after the argument name.
+
+    sub f(&c:(Int, Str)) { say c(10, 'ten') }; 
+    sub g(Int $i, Str $s){ $s ~ $i };
+    f(&g);
+    # OUTPUT«ten10␤»
+
+=head3 X«Constraining Return Types|-->;returns»
+
+The token C<-->> followed by a type will force a type check on successful
+execution of a routine. The return type arrow has to be placed at the end of
+the parameter list. The keyword C<returns> following a signature declaration
+has the same function. C<Nil> is considered as being defined for the type check.
+
+
+	sub foo(--> Int) { 1 };
+	sub foo() returns Int { 1 };
+	sub does-not-work(--> Int) { "" }; # throws X::TypeCheck::Return
+
+If the type constraint is a constant expression, it is used as the return value
+of the routine. Any return statement in that routine has to be argumentless.
+
+	sub foo(--> 123) { return }
+
+L<C<Nil>|/type/Nil> and L<C<Failure>|/type/Failure> are always allowed as return types, regardless of any
+type constraint.
+
+	sub foo(--> Int) { Nil };
+	say foo.perl; # Nil
+
+Type captures and coercion types are not supported.
+
 =head2 X<Slurpy (A.K.A. Variadic) Parameters|parameter,*@;parameter,*%>
 
 An array or hash parameter can be marked as I<slurpy> by leading asterisk(s),
@@ -199,6 +246,26 @@ Slurpy parameters have special behaviors when combined with some
 L<traits and modifiers|#Parameter_Traits_and_Modifiers>,
 as described below.
 
+=head2 Type Captures
+
+Type Captures allow to defer the specification of a type constraint to the time
+the function is called. They allow to refer to a type both in the signature and
+the function body.
+
+    sub f(::T $p1, T $p2, ::C){
+        # $p1 and $p2 are of the same type T, that we don't know yet
+        # C will hold a type we derive from a type object or value
+        my C $closure = $p1 / $p2;
+            return sub (T $p1) {
+                    $closure * $p1;
+            }
+    }
+
+    # The first parameter is Int and so must be the 2nd.
+    # We derive the 3rd type from calling the operator that is used in &f.
+    my &s = f(10, 2, Int.new / Int.new);
+    say s(2); # 10 / 2 * 2 == 10
+
 =head2 Positional vs. Named
 
 A parameter can be I<positional> or I<named>. All parameters are positional,
@@ -231,7 +298,24 @@ variable name:
 Aliases are also possible that way:
 
     sub paint( :color(:colour($c)) ) { }    # 'color' and 'colour' are both OK
-    sub paint( :color(:$colour) ) { }      # same API for the caller
+    sub paint( :color(:$colour) ) { }       # same API for the caller
+
+A function with named arguments can be called dynamically, dereferencing a
+Pair with C<|> to turn it into a named argument.
+
+	multi f(:$named){ note &?ROUTINE.signature };
+	multi f(:$also-named){ note &?ROUTINE.signature };
+	for 'named', 'also-named' -> $n {
+		f(|($n => rand))                    # «(:$named)␤(:$also-named)␤»
+	}
+
+	my $pair = :named(1);
+	f |$pair;                               # «(:$named)␤»
+
+The same can be used to convert a Hash into named arguments.
+
+	my %pairs = also-named => 4;
+	f |%pairs;                              # «(:$also-named)␤»
 
 =head2 Optional and Mandatory Parameters
 
@@ -294,9 +378,10 @@ Prefixing a parameter with a vertical bar C<|> makes the parameter a
 L<C<Capture>>, using up all the remaining positional and named
 arguments.
 
-This is often used in L<C<proto> definitions|proto> (like C<proto foo (|) {*}>)
-to indicate that the routine's L<C<multi> definitions|multi> can have any
-L<type constraints|#Type_Constraints>.
+This is often used in C<proto> definitions (like C<proto foo (|) {*}>) to
+indicate that the routine's L<C<multi> definitions|multi> can have any L<type
+constraints|#Type_Constraints>. See L<proto|/language/functions#proto> for an
+example.
 
 =head2 X<Parameter Traits and Modifiers|trait,is copy;trait,is rw>
 

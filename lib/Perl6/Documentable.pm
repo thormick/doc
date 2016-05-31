@@ -13,6 +13,11 @@ class Perl6::Documentable {
     # the Documentable that this one was extracted from, if any
     has $.origin;
 
+    # Remove itemization from incoming arrays
+    method new (:$categories = [], :$subkinds = [], *%_) {
+        nextwith |%_, :categories($categories.list), :subkinds($subkinds.list);
+    }
+
     my sub english-list (*@l) {
         @l > 1
             ?? @l[0..*-2].join(', ') ~ " and @l[*-1]"

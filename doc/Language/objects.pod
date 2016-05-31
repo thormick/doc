@@ -65,13 +65,13 @@ return value of a method call. This is how read-writable attributes to
 objects are used:
 
 =for code :allow<L>
-$*IN.L<input-line-separator> = "\r\n";
+$*IN.L<nl-in> = "\r\n";
 
-Here, we are call the method C<input-line-separator> on the C<$*IN> object,
-give it no arguments, and assign to the container it returned with the
+Here, we are calling method C<nl-in> on the C<$*IN> object,
+without arguments, and assign to the container it returned with the
 L<C<=>|=> operator.
 
-All objects support the methods from class L<Mu>, which is the root of the
+All objects support methods from class L<Mu>, which is the root of the
 type hierarchy. In other words, all objects are derived from C<Mu>.
 
 =head2 Type Objects
@@ -139,8 +139,7 @@ another class.
 
 Attributes are variables that exist per instance of a class. They are where
 the state of an object is stored. In Perl 6, all attributes are private.
-They are typically declared using the C<has> declarator and using the C<!>
-twigil.
+They are typically declared using the C<has> declarator and the C<!> twigil.
 
     class Journey {
         has $!origin;
@@ -162,7 +161,7 @@ call).
     }
 
 This defaults to providing a read-only accessor. In order to allow changes
-to the attribute, add the C<rw> trait:
+to the attribute, add the L<is rw> trait:
 
     class Journey {
         has $.origin;
@@ -174,6 +173,19 @@ to the attribute, add the C<rw> trait:
 Now, after a C<Journey> object is created, its C<.origin>, C<.destination>,
 and C<.notes> will all be accessible from outside the class, but only
 C<.notes> can be modified.
+
+The above allows creation of C<Journey> objects without an origin or
+destination. To change this you can provide a default value or make
+sure that it is provided by marking it with L<is required>.
+
+    class Journey {
+        # error if origin is not provided
+        has $.origin is required;
+        # set the destination to Orlando as default (unless that is the origin!)
+        has $.destination = self.origin eq 'Orlando' ?? 'Kampala' !! 'Orlando';
+        has @!travellers;
+        has $.notes is rw;
+    }
 
 Since classes inherit a default constructor from C<Mu> and we have requested
 that some accessor methods are generated for us, our class is already
@@ -228,12 +240,24 @@ used in methods and can always be used with the C<!> twigil, even if they
 are declared with the C<.> twigil. This is because really, the C<.> twigil
 declares a C<!> twigil and then additionally generates an accessor method.
 
-There is a subtle but important difference between using, say, C<$!origin>
+Looking at the code above,
+there is a subtle but important difference between using C<$!origin>
 and C<$.origin> in the method C<describe>. The first is always a simple
 lookup of the attribute. It is cheap, and you know that it is the attribute
 declared in this class. The latter is really a method call and thus it may
 be overridden in a subclass. Only use C<$.origin> if you explicitly want to
 allow overriding.
+
+Unlike Subroutines, additional named arguments will not produce compile time or
+runtime errors. That allows chaining of methods via
+L<Re-dispatching|/language/functions#Re-dispatching>
+
+Method names can be resolved at runtime with the C<.""> operator.
+
+    class A { has $.b };
+    my $name = 'b';
+    A.new."$name"().say;
+    # OUTPUT«(Any)␤»
 
 =head2 self
 
@@ -364,14 +388,14 @@ class Point {
     has $.x;
     has $.y = 2 * $!x;
 }
-my $p = PointB<.L<new>>( x L«=>» 1, y => 2);
+my $p = PointB<.L<new>>( x L«=>» 5, y => 2);
 #             ^^^ inherited from class Mu
 say "x: ", $p.x;
 say "y: ", $p.y;
 
 This outputs:
 
-    x: 1
+    x: 5
     y: 2
 
 =for code :allow<B L>
@@ -465,6 +489,8 @@ class MyClass {
         callsame;   # call the parent classes (or default) BUILDALL
 
         # you can do final checks here.
+        
+        self # return the fully built object
     }
 }
 =end code
@@ -513,9 +539,7 @@ order:
         }
     }
 
-=head1 Roles
-
-X<Roles|declarator,role>
+=head1 X<Roles|declarator,role>
 
 Roles are in some ways similar to classes, in that they are a collection of
 attributes and methods. They differ in that roles are also meant for
@@ -524,12 +548,13 @@ to classes. Or to phrase it differently, classes are meant for managing
 instances and roles are meant for managing behavior and code reuse.
 
     =begin code :allow<B L>
+    use MONKEY-SEE-NO-EVAL;
     role Serializable {
         method serialize() {
             self.L<perl>; # very primitive serialization
         }
         method deserialize($buf) {
-            L<EVAL> $buf; # reverse operation to .perl
+            L<EVAL|/routine/EVAL> $buf; # reverse operation to .perl
         }
     }
 
@@ -543,7 +568,7 @@ instances and roles are meant for managing behavior and code reuse.
     say $clone-of-p.x;      # 1
     =end code
 
-Roles are immutable as soon as the compiler parses the closing bracket of
+Roles are immutable as soon as the compiler parses the closing curly brace of
 the role declaration.
 
 =head2 Z<>Role Application
@@ -556,7 +581,7 @@ providing a method of the same name in the class.
 
 This is much safer than multiple inheritance, where conflicts are never
 detected by the compiler, but are instead simply resolved to the superclass
-that appears earlier in the method resolution order, which might or might not be what the
+that appears earlier in the method resolution order, which might not be what the
 programmer wanted.
 
 For example, if you've discovered an efficient method to ride cows, and are
@@ -669,6 +694,33 @@ This allows you to create roles that act as abstract interfaces.
 The implementation of the stubbed method may also be provided by another
 role.
 
+=head2 Inheritance
+
+Roles cannot inherit from classes, but they may cause any class which does
+that role to inherit from another class.  So if you write:
+
+    =begin code
+        role A is Exception { }
+        class X::Ouch does A { }
+        X::Ouch.^parents.say # ((Exception))
+    =end code
+
+...then C<X::Ouch> will inherit directly from Exception, as we can see above
+by listing its parents.
+
+=head2 Pecking order
+
+A method defined directly in a class will always override definitions from
+applied roles or from inherited classes.  If no such definition exists, methods
+from roles override methods inherited from classes.  This happens both when
+said class was brought in by a role, and also when said class was inherited
+directly.
+
+Note that each candidate for a multi-method is its own method... in this case,
+the above only applies if two such candidates have the same signature.
+Otherwise, there is no conflict, and the candidate is just added to the
+multi-method.
+
 =head2 Automatic Role Punning
 
 Any attempt to instantiate (and many other kinds of usage) a role will
@@ -746,11 +798,53 @@ Logging[$*OUT].log(debug, 'here we go');        # [DEBUG] here we go
 You can have multiple roles of the same name, but with different signatures;
 the normal rules of multi dispatch apply for choosing multi candidates.
 
+=head2 X<Mixins> of Roles
+
+Roles can be mixed into objects. A role's given attributes and methods will be
+added to the methods and attributes the object already has. Multiple mixins and
+anonymous roles are supported.
+
+    role R { method Str() {'hidden!'} };
+    my $i = 2 but R;
+    sub f(\bound){ put bound };
+    f($i); # hidden!
+
+Note that the object got the role mixed in, not the object's class or the
+container. Thus @-sigiled containers will require binding to make the role
+stick. Some operators will return a new value, which effectively strips
+the mixin from the result.
+
+Mixins can happen at any time of your object's life.
+
+    # A counter for Table of Contents
+    role TOC-Counter {
+        has Int @!counters is default(0);
+        method Str () { @!counters.join: '.' }
+        method inc ($level) {
+            @!counters[$level - 1]++;
+            @!counters.splice($level);
+            self
+        }
+    }
+
+    my Num $toc-counter = NaN;     # don't do maths with Not A Number
+    say $toc-counter; # NaN
+    $toc-counter does TOC-Counter; # now we mix the role in
+    $toc-counter.inc(1).inc(2).inc(2).inc(1).inc(2).inc(2).inc(3).inc(3);
+    put $toc-counter / 1;          # NaN (because that's numerical context)
+    put $toc-counter;              # 2.2.2 (put will call TOC-Counter::Str)
+
+Roles can by anonymous.
+
+    my %seen of Int is default(0 but role :: { method Str() {'NULL'} });
+    say %seen<not-there>;          # NULL
+    say %seen<not-there>.defined;  # True (0 may be False but is well defined)
+    say Int.new(%seen<not-there>); # 0
 
 =head1 Meta-Object Programming and Introspection
 
 Perl 6 has a meta object system, which means that the behavior of objects,
-classes, roles, grammars, enums etc. are themselves controlled by other
+classes, roles, grammars, enums, etc. are themselves controlled by other
 objects; those objects are called I<meta objects>. Meta objects are, like
 ordinary objects, instances of classes, in this case we call them I<meta
 classes>.

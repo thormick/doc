@@ -72,7 +72,7 @@ C<$$> is replaced in Perl 6 by C<$*PID>
 =item $PROGRAM_NAME
 =item $0
 
-You can access the program name in Perl 6 via C<$*PROGRAM_NAME>.
+You can access the program name in Perl 6 via C<$*PROGRAM-NAME>.
 
 Note: $0 in Perl 6 is the variable holding the first captured value from a
 match (i. e. capture variables now start from $0 rather than $1).
@@ -159,9 +159,8 @@ only difference seems to be that OLDPWD is missing from Perl 6's %ENV.
 
 =item $]
 
-The version of the perl is returned by C<$*PERL.version>. As of this writing,
-that is "vunknown", which may be less than useful. For the record, C<$*PERL>
-itself contains, as of this writing, "Perl 6".
+The version of perl is returned by C<$*PERL.version>. For the beta this was
+"v6.b" with C<$*PERL> containing "Perl 6 (6.b)".
 
 =item $SYSTEM_FD_MAX
 
@@ -176,23 +175,27 @@ become C<$*SYS_FD_MAX>, this has not yet been implemented.
 indicates that C<@F> in Perl 5 is replaced by C<@_> in Perl 6, but it's
 unclear just how that works. On the other hand, it's currently something of a
 moot point, as the Perl 5 to Perl 6 Translation doc indicates that the C<-a>
-and <-F> command-line switches are not yet implemented in rakudo.
+and C<-F> command-line switches are not yet implemented in rakudo.
 
 =item @INC
 
-[NEEDS FURTHER RESEARCH] If you've been following along, it will
-probably not surprise you that this is C<@*INC> in Perl 6. The Perl 6
-docs say "Each repository is represented as an object with the
-CompUnitRepo interface in the @*INC array" which could probably use some
-further explanation. With the version of rakudo star I'm working with,
-each directory is prefixed with either C<file#> or C<inst#>. Presumably
-this will become clear when documentation for CompUnitRepo shows up.
+No longer exists in Perl 6.  Please use "use lib" to manipulate the
+module repositories to be searched.  The closest thing to @INC is
+really $*REPO.  But that works completely differently from @INC mostly
+because of the precompilation capabilities of Perl 6.
+
+     # Print out a list of compunit repositories
+     .say for $*REPO.repo-chain;
 
 =item %INC
 
-[NEEDS FURTHER RESEARCH] No longer exists. S28 says it is "encapsulated
-in CompUnitRepo object" which, as with C<@INC> raises the question of
-what that means.
+No longer exists in Perl 6.  Because each Repository is responsible for
+remembering which modules have been loaded already. You can get a list
+of all loaded modules (compilation units) like so:
+
+    use Test;
+    use MyModule;
+    say flat $*REPO.repo-chain.map(*.loaded); #-> (MyModule Test)
 
 =item $INPLACE_EDIT
 
@@ -212,8 +215,8 @@ This is somewhat unclear. It probably depends on what you mean by "the name of
 the operating system" as S28 has three different suggestions, all of which
 give different answers. On my OS X machine at this time...
 
-C<$*KERNEL> gives "darwin (14.3.0)"
-C<$*DISTRO> gives "macosx (10.10.3)"
+    say $*KERNEL; # gives "darwin (14.3.0)"
+    say $*DISTRO; # gives "macosx (10.10.3)"
 
 Using C<.version> on either of those will give you just the version
 number. C<.name> gives the kernel or distro name. Those objects contain
@@ -233,7 +236,7 @@ translation.
 
 =item $^T
 
-Replaced in Perl 6 by C<$*INITITME>. Unlike in Perl 5, this is not in seconds
+Replaced in Perl 6 by C<$*INITTIME>. Unlike in Perl 5, this is not in seconds
 since epoch, but an C<Instant> object, which is measured in atomic seconds,
 with fractions.
 
@@ -241,7 +244,7 @@ with fractions.
 
 =item $^V
 
-As with C<$]> this has been replaced with C<$PERL.version>.
+As with C<$]> this has been replaced with C<$*PERL.version>.
 
 =item ${^WIN32_SLOPPY_STAT}
 
@@ -251,7 +254,7 @@ There does not seem to be any analog to this in Perl 6.
 
 =item $^X
 
-This has been replaced by C<$*EXECUTABLE_NAME>. Confusingly, the Perl 6
+This has been replaced by C<$*EXECUTABLE-NAME>. Confusingly, the Perl 6
 Variables doc says "Favor $*EXECUTABLE because it is not guaranteed that
 the perl executable is in PATH." Confusingly because C<$*EXECUTABLE> is
 an C<IO> object, which does not seem to be what you would want here.
@@ -425,8 +428,8 @@ filehandle. E. g. C<$*IN.ins>.
 
 =item $/
 
-This is accessed through the C<.nl> method on the filehandle. E. g.
-C<$*IN.nl>.
+This is accessed through the C<.nl-in> method on the filehandle. E. g.
+C<$*IN.nl-in>.
 
 =item $OUTPUT_RECORD_SEPARATOR
 
@@ -434,9 +437,8 @@ C<$*IN.nl>.
 
 =item $\
 
-[NEEDS FURTHER RESEARCH] The <.nl> method on the filehandle (e. g.
-C<$*OUT.nl>) I<appears> to give the output record separator, but this is
-currently not clear.
+This is accessed through the C<.nl-out> method on the filehandle. E. g.
+C<$*OUT.nl-out>.
 
 =item $OUTPUT_AUTOFLUSH
 
