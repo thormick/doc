@@ -24,4 +24,4 @@ install:
   - panda installdeps .
   - panda install Pod::To::HTML
 
-script: make test && make html
+script: perl6 Configure.p6 && make test && make html
