@@ -114,7 +114,7 @@ sub MAIN(
     Bool :$no-inline-python = False,
 ) {
     say 'Creating html/ subdirectories ...';
-    for flat '', <type language routine images syntax> {
+    for flat '', <type language routine syntax> {
         mkdir "html/$_" unless "html/$_".IO ~~ :e;
     }
 
