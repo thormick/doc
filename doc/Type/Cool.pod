@@ -286,7 +286,7 @@ Usage:
     NUMERIC.tan
 
 Coerces the invocant (or in sub form, the argument) to L<Numeric|/type/Numeric>, interprets it as radians,
-returns its L<tangens|https://en.wikipedia.org/wiki/Tangent>.
+returns its L<tangent|https://en.wikipedia.org/wiki/Tangent>.
 
 =head2 routine atan
 
@@ -301,7 +301,7 @@ Usage:
     NUMERIC.atan
 
 Coerces the invocant (or in sub form, the argument) to L<Numeric|/type/Numeric>, and returns its
-L<arc-tangens|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
+L<arc-tangent|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
 radians.
 
 =head2 routine atan2
@@ -318,7 +318,7 @@ Usage:
 
 Coerces the arguments (including the invocant in the method form) to L<Numeric|/type/Numeric>,
 and returns their two-argument
-L<arc-tangens|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
+L<arc-tangent|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
 radians.
 
 =head2 method sec
@@ -334,7 +334,7 @@ Usage:
     NUMERIC.sec
 
 Coerces the invocant (or in sub form, its argument) to L<Numeric|/type/Numeric>, interprets it as radians,
-returns its L<secans|https://en.wikipedia.org/wiki/Trigonometric_functions#Reciprocal_functions>,
+returns its L<secant|https://en.wikipedia.org/wiki/Trigonometric_functions#Reciprocal_functions>,
 that is, the reciprocal of its cosine.
 
 =head2 routine asec
@@ -350,7 +350,7 @@ Usage:
     NUMERIC.asec
 
 Coerces the invocant (or in sub form, its argument) to L<Numeric|/type/Numeric>, and returns its
-L<arc-secans|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
+L<arc-secant|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
 radians.
 
 =head2 routine cosec
@@ -366,7 +366,7 @@ Usage:
     NUMERIC.cosec
 
 Coerces the invocant (or in sub form, its argument) to L<Numeric|/type/Numeric>, interprets it as radians,
-returns its L<cosecans|https://en.wikipedia.org/wiki/Trigonometric_functions#Reciprocal_functions>,
+returns its L<cosecant|https://en.wikipedia.org/wiki/Trigonometric_functions#Reciprocal_functions>,
 that is, the reciprocal of its sine.
 
 =head2 routine acosec
@@ -382,7 +382,7 @@ Usage:
     NUMERIC.acosec
 
 Coerces the invocant (or in sub form, its argument) to L<Numeric|/type/Numeric>, and returns its
-L<arc-cosecans|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
+L<arc-cosecant|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
 radians.
 
 =head2 routine cotan
@@ -398,8 +398,8 @@ Usage:
     NUMERIC.cotan
 
 Coerces the invocant (or in sub form, its argument) to L<Numeric|/type/Numeric>, interprets it as radians,
-returns its L<cotangens|https://en.wikipedia.org/wiki/Trigonometric_functions#Reciprocal_functions>,
-that is, the reciprocal of its tangens.
+returns its L<cotangent|https://en.wikipedia.org/wiki/Trigonometric_functions#Reciprocal_functions>,
+that is, the reciprocal of its tangent.
 
 =head2 routine acotan
 
@@ -414,7 +414,7 @@ Usage:
     NUMERIC.acotan
 
 Coerces the invocant (or in sub form, its argument) to L<Numeric|/type/Numeric>, and returns its
-L<arc-cotangens|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
+L<arc-cotangent|https://en.wikipedia.org/wiki/Inverse_trigonometric_functions> in
 radians.
 
 =head2 routine sinh
@@ -490,7 +490,7 @@ Usage:
     NUMERIC.tanh
 
 Coerces the invocant (or in sub form, its argument) to L<Numeric|/type/Numeric>, and returns its
-L<Tangens hyperbolicus|https://en.wikipedia.org/wiki/Hyperbolic_function>.
+L<Tangent hyperbolicus|https://en.wikipedia.org/wiki/Hyperbolic_function>.
 
 =head2 routine atanh
 
@@ -505,7 +505,7 @@ Usage:
     NUMERIC.atanh
 
 Coerces the invocant (or in sub form, its argument) to L<Numeric|/type/Numeric>, and returns its
-L<Inverse tangens hyperbolicus|https://en.wikipedia.org/wiki/Inverse_hyperbolic_function>.
+L<Inverse tangent hyperbolicus|https://en.wikipedia.org/wiki/Inverse_hyperbolic_function>.
 
 =head2 routine sech
 
@@ -1067,7 +1067,7 @@ Usage:
     say (0..0x1FFFF).sort(*.uniname.chars)[*-1].chr.uniname;
     # «ARABIC LIGATURE UIGHUR KIRGHIZ YEH WITH HAMZA ABOVE WITH ALEF MAKSURA INITIAL FORM␤»
 
-Interprets the invocant / first argument as a L</type/Str>, and returns the
+Interprets the invocant / first argument as a L<Str|/type/Str>, and returns the
 Unicode codepoint name of the first character. To convert a whole string use L<uninames|#routine_uninames>.
 
 =head2 routine uninames
@@ -1347,7 +1347,7 @@ to L<Str|/type/Str>, and searches for C<$needle> in the string starting from C<$
 It returns the offset into the string where C<$needle> was found, and an undefined
 value if it was not found.
 
-See L<the documentation in type Str|/type/Str#routine index> for examples.
+See L<the documentation in type Str|/type/Str#routine_index> for examples.
 
 =head2 routine rindex
 
@@ -1366,7 +1366,7 @@ L<Str|/type/Str> and C<$startpos> to L<Int|/type/Int>, and
 returns the last position of C<$needle> in C<$haystack> not after C<$startpos>.
 Returns an undefined value if C<$needle> wasn't found.
 
-See L<the documentation in type Str|/type/Str#routine rindex> for examples.
+See L<the documentation in type Str|/type/Str#routine_rindex> for examples.
 
 =head2 routine roots
 
@@ -1446,7 +1446,7 @@ Symbols in the current lexical scope are visible to code in an C<EVAL>.
     EVAL 'say $answer;';    # says 42
 
 However, since the set of symbols in a lexical scope is immutable after compile
-time, an EVAL can never introduced symbols into the surrounding scope.
+time, an EVAL can never introduce symbols into the surrounding scope.
 
     EVAL 'my $lives = 9'; say $lives;   # error, $lives not declared
 

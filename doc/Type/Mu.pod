@@ -7,7 +7,7 @@
     class Mu { ... }
 
 The root of the Perl 6 type hierarchy. For the origin of the name, see
-L<http://en.wikipedia.org/wiki/Mu_%28negative%29>. One can also say that
+L<https://en.wikipedia.org/wiki/Mu_%28negative%29>. One can also say that
 there are many undefined values in Perl 6, and C<Mu> is the I<most undefined>
 value.
 
@@ -47,6 +47,24 @@ A more idiomatic way to do this is to use the smartmatch operator L<~~|/routine/
 
     my $s = "String";
     say $s ~~ Str;       # True
+
+=head2 routine does
+
+    method does(Mu $type)      returns Bool:D
+
+Returns C<True> if and only if the invocant conforms to type C<$type>.
+
+    my $d = Date.new('2016-06-03');
+    say $d.does(Dateish);             # True    (Date does role Dateish)
+    say $d.does(Any);                 # True    (Date is a subclass of Any)
+    say $d.does(DateTime);            # False   (Date is not a subclass of DateTime)
+
+Using the smart match operator L<~~|/routine/~~> is a more idiomatic alternative.
+
+    my $d = Date.new('2016-06-03');
+    say $d ~~ Dateish;                # True
+    say $d ~~ Any;                    # True
+    say $d ~~ DateTime;               # False
 
 =head2 routine Bool
 
@@ -138,8 +156,8 @@ Classes may provide their own C<new> method to override this default.
 
 C<new> triggers an object construction mechanism that calls submethods named
 C<BUILD> in each class of an inheritance hierarchy, if they exist. See
-L<the documentation on object construction|/language/objects#Object
-Construction> for more information.
+L<the documentation on object construction|/language/objects#Object_Construction>
+for more information.
 
 =head2 method bless
 
@@ -268,7 +286,8 @@ Marks a type as being exported, that is, available to external users.
 A user of a module or class automatically gets all the symbols imported that
 are marked as C<is export>.
 
-See L</language/modules#Exporting_and_Selective_Importing> for more details.
+See L<Exporting and Selective Importing Modules|/language/modules#Exporting_and_Selective_Importing>
+for more details.
 
 =head2 method take
 
