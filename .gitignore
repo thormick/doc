@@ -6,9 +6,12 @@ html/routine/
 html/type/
 html/op/
 html/language/
+html/programs/
 html/syntax/
 html/images/type-graph*
 html/js/search.js
 .precomp
 precompiled
+assets/assetpack.db
+assets/cache
 Makefile
