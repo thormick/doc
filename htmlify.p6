@@ -106,7 +106,6 @@ sub recursive-dir($dir) {
 # --sparse=5: only process 1/5th of the files
 # mostly useful for performance optimizations, profiling etc.
 sub MAIN(
-    Bool :$typegraph = False,
     Int  :$sparse,
     Bool :$disambiguation = True,
     Bool :$search-file = True,
@@ -134,7 +133,7 @@ sub MAIN(
     say 'Reading type graph ...';
     $type-graph = Perl6::TypeGraph.new-from-file('type-graph.txt');
     my %h = $type-graph.sorted.kv.flat.reverse;
-    write-type-graph-images(:force($typegraph));
+    write-type-graph-images;
 
     process-pod-dir 'Programs', :$sparse;
     process-pod-dir 'Language', :$sparse;
@@ -585,17 +584,9 @@ sub find-definitions(:$pod, :$origin, :$min-level = -1, :$url) {
     return $i;
 }
 
-sub write-type-graph-images(:$force) {
-    unless $force {
-        my $dest = 'html/images/type-graph-Any.svg'.IO;
-        if $dest.e && $dest.modified >= 'type-graph.txt'.IO.modified {
-            say "Not writing type graph images, it seems to be up-to-date";
-            say "To force writing of type graph images, supply the --typegraph";
-            say "option at the command line, or delete";
-            say "file 'html/images/type-graph-Any.svg'";
-            return;
-        }
-    }
+sub write-type-graph-images {
+    my $dest = 'html/images/type-graph-Any.svg'.IO;
+
     say 'Writing type graph images to html/images/ ...';
     for $type-graph.sorted -> $type {
         my $viz = Perl6::TypeGraph::Viz.new-for-type($type);
